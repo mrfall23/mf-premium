@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Users, ShoppingBag, TrendingUp, Trash2, Plus, LogOut } from 'lucide-react';
+import { Users, ShoppingBag, TrendingUp, Trash2, Plus, LogOut, CheckCircle, Phone } from 'lucide-react';
 
 interface Stats {
   totalCustomers: number;
@@ -78,6 +78,11 @@ export default function AdminDashboard() {
     loadData();
   };
 
+  const handleMarkPaid = async (order: Order) => {
+    await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id);
+    loadData();
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('mf_admin');
     router.push('/admin/login');
@@ -138,7 +143,8 @@ export default function AdminDashboard() {
                   <th className="pb-3 pr-4">Client</th>
                   <th className="pb-3 pr-4">Montant</th>
                   <th className="pb-3 pr-4">Statut</th>
-                  <th className="pb-3">Date</th>
+                  <th className="pb-3 pr-4">Date</th>
+                  <th className="pb-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -155,7 +161,29 @@ export default function AdminDashboard() {
                         {order.status}
                       </span>
                     </td>
-                    <td className="py-3 text-gray-400">{new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
+                    <td className="py-3 pr-4 text-gray-400">{new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        {order.status === 'pending' && (
+                          <button
+                            onClick={() => handleMarkPaid(order)}
+                            title="Marquer comme payé"
+                            className="flex items-center gap-1 bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-600/30 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+                          >
+                            <CheckCircle className="w-3 h-3" /> Payé
+                          </button>
+                        )}
+                        <a
+                          href={`https://wa.me/${order.customers?.phone?.replace(/\s/g,'')}?text=Bonjour ${encodeURIComponent(order.customers?.name || '')}, votre commande %23${order.id.slice(0,8).toUpperCase()} est confirmée. Voici vos accès :`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="WhatsApp client"
+                          className="flex items-center gap-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-600/30 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+                        >
+                          <Phone className="w-3 h-3" /> WA
+                        </a>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

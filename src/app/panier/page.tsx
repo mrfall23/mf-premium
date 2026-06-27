@@ -93,6 +93,11 @@ export default function PanierPage() {
     }
     if (cart.length === 0) { setError('Ton panier est vide.'); return; }
 
+    // Normalise le numéro : ajoute 237 si pas déjà présent
+    let phone = customer.phone.replace(/\s+/g, '');
+    if (!phone.startsWith('237')) phone = '237' + phone;
+    const normalizedCustomer = { ...customer, phone };
+
     setLoading(true);
     setError('');
 
@@ -100,7 +105,7 @@ export default function PanierPage() {
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer, cart, total }),
+        body: JSON.stringify({ customer: normalizedCustomer, cart, total }),
       });
       const data = await res.json();
 

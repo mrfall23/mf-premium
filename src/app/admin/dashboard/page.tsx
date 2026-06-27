@@ -79,8 +79,13 @@ export default function AdminDashboard() {
   };
 
   const handleMarkPaid = async (order: Order) => {
-    await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id);
-    loadData();
+    const res = await fetch('/api/admin/mark-paid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: order.id }),
+    });
+    if (res.ok) loadData();
+    else alert('Erreur lors de la mise à jour');
   };
 
   const handleLogout = () => {

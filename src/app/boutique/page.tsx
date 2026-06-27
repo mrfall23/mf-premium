@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/types';
-import ProductCard from '@/components/ProductCard';
+import PricingSection from '@/components/PricingSection';
 
 async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
@@ -16,29 +16,49 @@ async function getProducts(): Promise<Product[]> {
   return data || [];
 }
 
+const durationOrder: Record<string, number> = { '1 mois': 0, '3 mois': 1, '1 an': 2 };
+
 export default async function BoutiquePage() {
   const products = await getProducts();
 
-  return (
-    <div className="pt-24 pb-20 px-4 max-w-7xl mx-auto">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Notre Boutique</h1>
-        <p className="text-gray-400 max-w-2xl mx-auto">
-          Choisissez vos abonnements premium et payez en toute sécurité avec Mobile Money.
-        </p>
-      </div>
+  const grouped: Record<string, Product[]> = {};
+  for (const p of products) {
+    if (!grouped[p.name]) grouped[p.name] = [];
+    grouped[p.name].push(p);
+  }
+  for (const key of Object.keys(grouped)) {
+    grouped[key].sort((a, b) => (durationOrder[a.duration] ?? 99) - (durationOrder[b.duration] ?? 99));
+  }
 
-      {products.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <p>Aucun produit disponible pour le moment.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      )}
+  return (
+    <div style={{ paddingTop: 64, paddingBottom: 80 }}>
+      <div className="animate-fadeInUp" style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(32px,6vw,48px) clamp(16px,4vw,40px) 80px' }}>
+        <h1 style={{
+          fontFamily: 'var(--font-orbitron, Orbitron), sans-serif',
+          fontSize: 'clamp(22px,4vw,28px)', fontWeight: 900,
+          color: '#fff', marginBottom: 8, letterSpacing: 2,
+        }}>BOUTIQUE</h1>
+        <p style={{ color: '#7c6d94', marginBottom: 40, fontSize: 14 }}>
+          Sélectionne ton abonnement et la durée souhaitée.
+        </p>
+
+        {Object.keys(grouped).length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 0', color: '#7c6d94' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🛒</div>
+            <p>Aucun produit disponible pour le moment.</p>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,340px),1fr))',
+            gap: 24,
+          }}>
+            {Object.entries(grouped).map(([name, variants]) => (
+              <PricingSection key={name} name={name} variants={variants} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

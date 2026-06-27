@@ -186,6 +186,11 @@ export default function AdminDashboard() {
                   <option value="anime">Anime</option>
                   <option value="design">Design</option>
                 </select>
+                <select value={newProduct.duration} onChange={(e) => setNewProduct({ ...newProduct, duration: e.target.value })} className="bg-black border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500">
+                  <option value="1 mois">1 Mois</option>
+                  <option value="3 mois">3 Mois</option>
+                  <option value="1 an">1 An</option>
+                </select>
                 <button onClick={handleAddProduct} className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl font-medium transition-colors col-span-1 md:col-span-2">
                   Enregistrer le produit
                 </button>

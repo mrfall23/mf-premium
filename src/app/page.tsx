@@ -1,72 +1,137 @@
 import Link from 'next/link';
-import { ArrowRight, Shield, Zap, Headphones } from 'lucide-react';
+
+const services = [
+  { name: 'Netflix', desc: 'Films & Séries 4K', icon: '🎬', bg: 'linear-gradient(135deg,#e50914,#8b0000)', glow: 'rgba(229,9,20,0.4)', anim: 'animate-float' },
+  { name: 'Spotify', desc: 'Musique sans pub', icon: '🎵', bg: 'linear-gradient(135deg,#1db954,#146f35)', glow: 'rgba(29,185,84,0.4)', anim: 'animate-float-2' },
+  { name: 'Amazon Prime', desc: 'Vidéo + livraison', icon: '📦', bg: 'linear-gradient(135deg,#00a8e0,#005f80)', glow: 'rgba(0,168,224,0.4)', anim: 'animate-float-3' },
+  { name: 'Crunchyroll', desc: 'Anime en streaming', icon: '⛩️', bg: 'linear-gradient(135deg,#f47521,#a04c10)', glow: 'rgba(244,117,33,0.4)', anim: 'animate-float-4' },
+  { name: 'Canva Pro', desc: 'Design & créativité', icon: '🎨', bg: 'linear-gradient(135deg,#7d2ae8,#4a1589)', glow: 'rgba(125,42,232,0.4)', anim: 'animate-float-5' },
+  { name: 'Apple Music', desc: '100M+ de titres', icon: '🍎', bg: 'linear-gradient(135deg,#fc3c44,#a01c22)', glow: 'rgba(252,60,68,0.4)', anim: 'animate-float-6' },
+];
+
+const features = [
+  { icon: '⚡', title: 'LIVRAISON INSTANTANÉE', desc: 'Reçois ton compte en quelques minutes après ta commande.' },
+  { icon: '🔒', title: '100% SÉCURISÉ', desc: 'Paiements sécurisés via Orange Money & MTN MoMo.' },
+  { icon: '💎', title: 'QUALITÉ PREMIUM', desc: 'Comptes vérifiés, accès complet, support réactif.' },
+];
 
 export default function HomePage() {
-  const services = [
-    { emoji: '🎬', name: 'Netflix' },
-    { emoji: '🎵', name: 'Spotify' },
-    { emoji: '📦', name: 'Amazon Prime' },
-    { emoji: '🍎', name: 'Apple Music' },
-    { emoji: '🍥', name: 'Crunchyroll' },
-    { emoji: '🎨', name: 'Canva Pro' },
-  ];
-
   return (
-    <div className="pt-16">
-      <section className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-black" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+    <div style={{ paddingTop: 64 }}>
+      {/* Hero */}
+      <section style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        textAlign: 'center', padding: 'clamp(60px,10vw,100px) clamp(16px,5vw,40px) 80px',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        {/* Glow orb */}
+        <div className="animate-glow-pulse" style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%,-50%)',
+          width: 'clamp(300px,50vw,600px)', height: 'clamp(300px,50vw,600px)',
+          background: 'radial-gradient(circle,rgba(168,85,247,0.15) 0%,transparent 70%)',
+          pointerEvents: 'none',
+        }} />
 
-        <div className="relative z-10 text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-4 py-2 mb-6">
-            <Zap className="w-4 h-4 text-blue-400" />
-            <span className="text-blue-400 text-sm font-medium">Paiement 100% sécurisé</span>
-          </div>
+        {/* Badge */}
+        <div className="animate-fadeInUp" style={{
+          display: 'inline-block',
+          background: 'rgba(168,85,247,0.12)',
+          border: '1px solid rgba(168,85,247,0.4)',
+          borderRadius: 999, padding: '6px 18px',
+          fontSize: 11, fontWeight: 600, letterSpacing: 2,
+          color: '#c084fc', textTransform: 'uppercase', marginBottom: 28,
+        }}>⚡ Abonnements Premium à Prix Réduits</div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            Vos abonnements{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">
-              Premium
-            </span>
-          </h1>
+        {/* Title */}
+        <h1 className="animate-fadeInUp" style={{
+          fontFamily: 'var(--font-orbitron, Orbitron), sans-serif',
+          fontSize: 'clamp(36px,7vw,80px)',
+          fontWeight: 900, lineHeight: 1.05, letterSpacing: -1,
+          marginBottom: 24,
+          background: 'linear-gradient(135deg,#fff 30%,#c084fc 70%,#a855f7 100%)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}>MF PREMIUM<br />L'ACCÈS ILLIMITÉ</h1>
 
-          <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            Netflix, Spotify, Amazon Prime et plus — payez avec Orange Money ou MTN Mobile Money. Livraison instantanée.
-          </p>
+        {/* Subtitle */}
+        <p className="animate-fadeInUp" style={{
+          fontSize: 'clamp(15px,2vw,18px)', color: '#9d8fb5',
+          maxWidth: 520, lineHeight: 1.7, marginBottom: 40, fontWeight: 300,
+        }}>
+          Netflix, Spotify, Amazon, Crunchyroll, Canva, Apple Music — tous vos abonnements au meilleur prix, livrés instantanément.
+        </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/boutique"
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-500/30"
-            >
-              Voir la boutique <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-16">
-            {services.map((service) => (
-              <div key={service.name} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-blue-500/50 transition-all">
-                <div className="text-3xl mb-2">{service.emoji}</div>
-                <div className="text-xs text-gray-400">{service.name}</div>
-              </div>
-            ))}
-          </div>
+        {/* CTAs */}
+        <div className="animate-fadeInUp" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+          <Link href="/boutique" className="btn-purple" style={{ padding: '14px 36px', fontSize: 13, display: 'inline-block', textDecoration: 'none' }}>
+            Voir la boutique →
+          </Link>
+          <Link href="/faq" className="btn-outline-purple" style={{ padding: '14px 36px', fontSize: 13, display: 'inline-block', textDecoration: 'none' }}>
+            Comment ça marche ?
+          </Link>
         </div>
       </section>
 
-      <section className="py-20 px-4 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-12">Pourquoi choisir MF Premium ?</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: <Shield className="w-8 h-8 text-blue-400" />, title: 'Paiement sécurisé', desc: 'Orange Money et MTN Mobile Money. Pas de données bancaires requises.' },
-            { icon: <Zap className="w-8 h-8 text-blue-400" />, title: 'Livraison rapide', desc: 'Votre abonnement est activé dès la validation du paiement.' },
-            { icon: <Headphones className="w-8 h-8 text-blue-400" />, title: 'Support WhatsApp', desc: 'Notre équipe est disponible 24h/24 sur WhatsApp pour vous aider.' },
-          ].map((feature, i) => (
-            <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-blue-500/30 transition-all">
-              <div className="bg-blue-500/10 rounded-xl p-3 w-fit mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-gray-400">{feature.desc}</p>
+      {/* Services grid */}
+      <section style={{ padding: '0 clamp(16px,5vw,40px) 80px' }}>
+        <h2 style={{
+          fontFamily: 'var(--font-orbitron, Orbitron), sans-serif',
+          fontSize: 22, fontWeight: 700, color: '#fff',
+          textAlign: 'center', marginBottom: 48, letterSpacing: 2,
+        }}>NOS SERVICES</h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))',
+          gap: 20, maxWidth: 1200, margin: '0 auto',
+        }}>
+          {services.map((svc, i) => (
+            <Link key={svc.name} href="/boutique" style={{ textDecoration: 'none' }}>
+              <div className={`card-purple ${svc.anim}`} style={{
+                padding: 28, display: 'flex', alignItems: 'center', gap: 20, cursor: 'pointer',
+              }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: 14,
+                  background: svc.bg, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 26, boxShadow: `0 4px 16px ${svc.glow}`,
+                }}>{svc.icon}</div>
+                <div>
+                  <div style={{
+                    fontFamily: 'var(--font-orbitron)', fontWeight: 700,
+                    fontSize: 15, color: '#fff', marginBottom: 4,
+                  }}>{svc.name}</div>
+                  <div style={{ fontSize: 12, color: '#7c6d94' }}>{svc.desc}</div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Features strip */}
+      <section style={{
+        padding: 'clamp(40px,6vw,60px) clamp(16px,5vw,40px)',
+        background: 'rgba(168,85,247,0.04)',
+        borderTop: '1px solid rgba(168,85,247,0.1)',
+        borderBottom: '1px solid rgba(168,85,247,0.1)',
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
+          gap: 32, maxWidth: 900, margin: '0 auto', textAlign: 'center',
+        }}>
+          {features.map(f => (
+            <div key={f.title}>
+              <div style={{
+                fontFamily: 'var(--font-orbitron)', fontSize: 32,
+                fontWeight: 900, color: '#a855f7', marginBottom: 8,
+              }}>{f.icon}</div>
+              <div style={{
+                fontFamily: 'var(--font-orbitron)', fontSize: 13,
+                fontWeight: 700, color: '#fff', marginBottom: 6, letterSpacing: 1,
+              }}>{f.title}</div>
+              <div style={{ fontSize: 13, color: '#7c6d94' }}>{f.desc}</div>
             </div>
           ))}
         </div>

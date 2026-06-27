@@ -1,70 +1,123 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Menu, X, Zap } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { getCart } from '@/lib/store';
 
 export default function Navbar() {
   const [cartCount, setCartCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
-    const updateCount = () => {
+    const update = () => {
       const cart = getCart();
-      setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+      setCartCount(cart.reduce((s, i) => s + i.quantity, 0));
     };
-    updateCount();
-    window.addEventListener('cart-updated', updateCount);
-    return () => window.removeEventListener('cart-updated', updateCount);
+    update();
+    window.addEventListener('cart-updated', update);
+    return () => window.removeEventListener('cart-updated', update);
   }, []);
 
+  const navColor = (path: string) =>
+    pathname === path ? '#a855f7' : '#9d8fb5';
+
+  const links = [
+    { href: '/', label: 'Accueil' },
+    { href: '/boutique', label: 'Boutique' },
+    { href: '/faq', label: 'FAQ' },
+  ];
+
   return (
-    <nav className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-md border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <Zap className="text-blue-500 w-6 h-6" />
-            <span className="text-xl font-bold">
-              <span className="text-white">MF</span>
-              <span className="text-blue-500"> Premium</span>
-            </span>
-          </Link>
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 24px', height: 64,
+      background: 'rgba(5,5,8,0.85)',
+      backdropFilter: 'blur(16px)',
+      borderBottom: '1px solid rgba(168,85,247,0.2)',
+    }}>
+      {/* Logo */}
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+        <div style={{
+          width: 38, height: 38,
+          background: 'linear-gradient(135deg,#a855f7,#7c3aed)',
+          borderRadius: 8,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-orbitron, Orbitron), sans-serif',
+          fontWeight: 900, fontSize: 14, color: '#fff', letterSpacing: 1,
+          boxShadow: '0 0 16px rgba(168,85,247,0.5)',
+          flexShrink: 0,
+        }}>MF</div>
+        <span style={{
+          fontFamily: 'var(--font-orbitron, Orbitron), sans-serif',
+          fontWeight: 700, fontSize: 16, color: '#fff', letterSpacing: 2,
+        }}>PREMIUM</span>
+      </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-gray-300 hover:text-white transition-colors">Accueil</Link>
-            <Link href="/boutique" className="text-gray-300 hover:text-white transition-colors">Boutique</Link>
-            <Link href="/panier" className="relative flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
-              <ShoppingCart className="w-4 h-4" />
-              <span>Panier</span>
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
-          </div>
-
-          <div className="md:hidden flex items-center gap-4">
-            <Link href="/panier" className="relative">
-              <ShoppingCart className="w-6 h-6" />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
-            <button onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
+      {/* Desktop links */}
+      <div className="hidden md:flex" style={{ alignItems: 'center', gap: 32 }}>
+        {links.map(l => (
+          <Link key={l.href} href={l.href} style={{
+            fontSize: 13, fontWeight: 500, letterSpacing: 1,
+            color: navColor(l.href), textTransform: 'uppercase',
+            textDecoration: 'none', transition: 'color .2s',
+          }}>{l.label}</Link>
+        ))}
       </div>
 
+      {/* Cart + mobile burger */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Link href="/panier" style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(168,85,247,0.12)',
+          border: '1px solid rgba(168,85,247,0.35)',
+          borderRadius: 8, padding: '8px 16px',
+          textDecoration: 'none', transition: 'all .2s',
+          position: 'relative',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          <span style={{ fontFamily: 'var(--font-orbitron)', fontSize: 12, fontWeight: 700, color: '#a855f7' }}>
+            {cartCount}
+          </span>
+        </Link>
+
+        {/* Mobile burger */}
+        <button
+          className="md:hidden"
+          onClick={() => setMenuOpen(!menuOpen)}
+          style={{ background: 'none', border: 'none', color: '#9d8fb5', cursor: 'pointer', padding: 4 }}
+        >
+          {menuOpen ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden bg-black border-t border-white/10 px-4 py-4 flex flex-col gap-4">
-          <Link href="/" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-white">Accueil</Link>
-          <Link href="/boutique" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-white">Boutique</Link>
-          <Link href="/panier" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-white">Panier</Link>
+        <div className="md:hidden" style={{
+          position: 'absolute', top: 64, left: 0, right: 0,
+          background: 'rgba(5,5,8,0.97)',
+          borderBottom: '1px solid rgba(168,85,247,0.2)',
+          padding: '16px 24px',
+          display: 'flex', flexDirection: 'column', gap: 16,
+        }}>
+          {links.map(l => (
+            <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)} style={{
+              fontSize: 14, fontWeight: 500, letterSpacing: 1,
+              color: navColor(l.href), textTransform: 'uppercase',
+              textDecoration: 'none',
+            }}>{l.label}</Link>
+          ))}
+          <Link href="/panier" onClick={() => setMenuOpen(false)} style={{
+            fontSize: 14, fontWeight: 500, color: '#a855f7', textDecoration: 'none',
+          }}>Panier ({cartCount})</Link>
         </div>
       )}
     </nav>

@@ -1,1 +1,135 @@
 @import "tailwindcss";
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: #050508;
+  color: #e8e0f7;
+  font-family: 'Space Grotesk', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0d0d14; }
+::-webkit-scrollbar-thumb { background: #a855f7; border-radius: 2px; }
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-fadeInUp { animation: fadeInUp 0.5s ease both; }
+.animate-glow-pulse { animation: glow-pulse 4s ease-in-out infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-float-2 { animation: float 3.4s ease-in-out infinite; }
+.animate-float-3 { animation: float 3.8s ease-in-out infinite; }
+.animate-float-4 { animation: float 4.2s ease-in-out infinite; }
+.animate-float-5 { animation: float 4.6s ease-in-out infinite; }
+.animate-float-6 { animation: float 5s ease-in-out infinite; }
+
+.font-orbitron { font-family: 'Orbitron', sans-serif; }
+.font-space { font-family: 'Space Grotesk', sans-serif; }
+
+/* Purple glow button */
+.btn-purple {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  box-shadow: 0 0 24px rgba(168,85,247,0.4);
+  transition: all 0.2s;
+}
+.btn-purple:hover {
+  box-shadow: 0 0 40px rgba(168,85,247,0.7);
+  transform: translateY(-2px);
+}
+
+.btn-outline-purple {
+  background: transparent;
+  border: 1px solid rgba(168,85,247,0.4);
+  border-radius: 10px;
+  color: #c084fc;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+.btn-outline-purple:hover {
+  border-color: #a855f7;
+  background: rgba(168,85,247,0.1);
+}
+
+/* Card */
+.card-purple {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 16px;
+  transition: all 0.25s;
+}
+.card-purple:hover {
+  border-color: rgba(168,85,247,0.5);
+  box-shadow: 0 0 32px rgba(168,85,247,0.15);
+}
+
+/* Input */
+.input-purple {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(168,85,247,0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #e8e0f7;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-purple:focus {
+  border-color: #a855f7;
+}
+.input-purple::placeholder { color: #5a4e6e; }
+
+/* Plan row hover */
+.plan-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(168,85,247,0.06);
+  border: 1px solid rgba(168,85,247,0.15);
+  border-radius: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.plan-row:hover {
+  background: rgba(168,85,247,0.15);
+  border-color: #a855f7;
+}
+
+/* FAQ item */
+.faq-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-item:hover { border-color: rgba(168,85,247,0.4); }

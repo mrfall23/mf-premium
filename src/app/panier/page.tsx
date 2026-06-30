@@ -83,7 +83,25 @@ export default function PanierPage() {
   };
 
   const ref = orderId ? '#' + orderId.slice(0, 8).toUpperCase() : '';
-  const waMsg = encodeURIComponent(`Bonjour MF Premium 👋\n\nJ'ai passé la commande ${ref} de ${total.toLocaleString()} FCFA.\n\nJe vous envoie ci-joint la capture d'écran de mon paiement pour confirmation.\n\nMerci !`);
+  const itemLines = cart.map(item => `  • ${item.name} — ${item.duration} — ${item.price.toLocaleString()} FCFA`).join('\n');
+  const waMsg = encodeURIComponent(
+`🛒 NOUVELLE COMMANDE — MF PREMIUM
+
+📋 Référence : ${ref}
+
+👤 Client
+  Nom : ${customer.name}
+  Téléphone : ${customer.phone}
+  Email : ${customer.email}
+
+🎬 Abonnement(s) commandé(s)
+${itemLines}
+
+💰 Total : ${total.toLocaleString()} FCFA
+
+📸 Ci-joint la capture d'écran de mon paiement.
+En attente de confirmation. Merci !`
+  );
   const waUrl = `https://wa.me/237651536287?text=${waMsg}`;
 
   // ── Confirmation screen ──

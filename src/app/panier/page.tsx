@@ -83,7 +83,7 @@ export default function PanierPage() {
   };
 
   const ref = orderId ? '#' + orderId.slice(0, 8).toUpperCase() : '';
-  const waMsg = encodeURIComponent(`Bonjour, j'ai passé la commande ${ref} de ${total.toLocaleString()} FCFA. J'ai effectué le paiement. Merci de confirmer.`);
+  const waMsg = encodeURIComponent(`Bonjour MF Premium 👋\n\nJ'ai passé la commande ${ref} de ${total.toLocaleString()} FCFA.\n\nJe vous envoie ci-joint la capture d'écran de mon paiement pour confirmation.\n\nMerci !`);
   const waUrl = `https://wa.me/237651536287?text=${waMsg}`;
 
   // ── Confirmation screen ──
@@ -146,9 +146,12 @@ export default function PanierPage() {
             <div style={{ display: 'flex', gap: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#a855f7,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#fff', flexShrink: 0 }}>2</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#e8e0f7', marginBottom: 10 }}>
-                  Confirme ton paiement sur WhatsApp
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#e8e0f7', marginBottom: 6 }}>
+                  Envoie ta commande + capture d'écran sur WhatsApp
                 </div>
+                <p style={{ fontSize: 12, color: '#7c6d94', marginBottom: 10, lineHeight: 1.5 }}>
+                  Fais une capture d'écran de ton reçu de paiement et envoie-la avec ton message pour valider ta commande.
+                </p>
                 <a href={waUrl} target="_blank" rel="noopener noreferrer" style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   background: 'linear-gradient(135deg,#25d366,#128c7e)',

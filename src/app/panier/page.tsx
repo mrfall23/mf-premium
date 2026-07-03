@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { CartItem, Customer } from '@/types';
 import { getCart, removeFromCart, clearCart, getCartTotal } from '@/lib/store';
+import { SEBPAY_COUNTRIES, getSebpayCountry } from '@/lib/sebpay';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,7 +29,9 @@ const bgFor = (name: string) => {
 export default function PanierPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customer, setCustomer] = useState<Customer>({ name: '', phone: '', email: '' });
-  const [operator, setOperator] = useState<'orange' | 'mtn'>('orange');
+  const [countryCode, setCountryCode] = useState('CM');
+  const [operator, setOperator] = useState('orange');
+  const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [waiting, setWaiting] = useState(false);
@@ -60,6 +63,16 @@ export default function PanierPage() {
 
   const cartTotal = getCartTotal(cart);
 
+  const selectedCountry = getSebpayCountry(countryCode) || SEBPAY_COUNTRIES[0];
+  const selectedOperator = selectedCountry.operators.find(o => o.code === operator) || selectedCountry.operators[0];
+
+  const handleCountryChange = (code: string) => {
+    setCountryCode(code);
+    const c = getSebpayCountry(code);
+    if (c) setOperator(c.operators[0].code);
+    setOtpCode('');
+  };
+
   const handleRemove = (id: string) => {
     setCart(removeFromCart(id));
     window.dispatchEvent(new Event('cart-updated'));
@@ -70,13 +83,22 @@ export default function PanierPage() {
       setError('Veuillez remplir tous les champs.');
       return;
     }
+    if (selectedOperator.otp && !otpCode) {
+      setError(`${selectedOperator.name} exige un code OTP. Génère-le depuis ton application ou le code USSD de ton opérateur, puis saisis-le.`);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer, cart, total: cartTotal, operator }),
+        body: JSON.stringify({
+          customer, cart, total: cartTotal,
+          country: selectedCountry.code,
+          operator: selectedOperator.code,
+          otp_code: otpCode || undefined,
+        }),
       });
       const data = await res.json();
       if (data.error) { setError(data.error); return; }
@@ -103,8 +125,10 @@ export default function PanierPage() {
   // ── Waiting for phone confirmation screen ──
   if (waiting && orderId) {
     const ref = '#' + orderId.slice(0, 8).toUpperCase();
-    const opName = operator === 'orange' ? 'Orange Money' : 'MTN MoMo';
-    const ussd = operator === 'orange' ? '#150#' : '*126#';
+    const opName = selectedOperator.name;
+    const ussd = selectedCountry.code === 'CM'
+      ? (selectedOperator.code === 'orange' ? '#150#' : '*126#')
+      : null;
 
     return (
       <div style={{ paddingTop: 64, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -145,7 +169,11 @@ export default function PanierPage() {
               <div style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: 14, padding: '16px 20px', marginBottom: 20, textAlign: 'left' }}>
                 <div style={{ fontSize: 12, color: '#c084fc', fontWeight: 600, marginBottom: 8 }}>💡 Tu n'as pas reçu la demande ?</div>
                 <div style={{ fontSize: 13, color: '#9d8fb5', lineHeight: 1.6 }}>
-                  Tape <strong style={{ color: '#fff', fontFamily: 'var(--font-orbitron)' }}>{ussd}</strong> sur ton téléphone pour valider la transaction en attente.
+                  {ussd ? (
+                    <>Tape <strong style={{ color: '#fff', fontFamily: 'var(--font-orbitron)' }}>{ussd}</strong> sur ton téléphone pour valider la transaction en attente.</>
+                  ) : (
+                    <>Ouvre ton application {opName} ou vérifie tes notifications pour valider la transaction en attente.</>
+                  )}
                 </div>
               </div>
               <div style={{ fontFamily: 'var(--font-orbitron)', fontSize: 14, color: '#7c6d94', marginBottom: 20 }}>
@@ -222,7 +250,12 @@ export default function PanierPage() {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: '#7c6d94', textTransform: 'uppercase', marginBottom: 8 }}>Téléphone Mobile Money</label>
-                    <input type="tel" placeholder="6XXXXXXXX" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} className="input-purple" />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 700, color: '#a855f7', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, padding: '12px 10px' }}>
+                        +{selectedCountry.prefix}
+                      </span>
+                      <input type="tel" placeholder="6XXXXXXXX" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} className="input-purple" style={{ flex: 1 }} />
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -231,36 +264,65 @@ export default function PanierPage() {
                 </div>
               </div>
 
+              {/* Choix pays */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: '#7c6d94', textTransform: 'uppercase', marginBottom: 8 }}>Pays</label>
+                <select
+                  value={countryCode}
+                  onChange={e => handleCountryChange(e.target.value)}
+                  className="input-purple"
+                  style={{ width: '100%', cursor: 'pointer', appearance: 'none' }}
+                >
+                  {SEBPAY_COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code} style={{ background: '#14101f', color: '#e8e0f7' }}>
+                      {c.flag} {c.name} (+{c.prefix})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Choix opérateur */}
               <div style={{ marginBottom: 24 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: '#7c6d94', textTransform: 'uppercase', marginBottom: 12 }}>Moyen de paiement</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <button
-                    onClick={() => setOperator('orange')}
-                    style={{
-                      padding: '14px 12px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s',
-                      background: operator === 'orange' ? 'rgba(255,137,29,0.15)' : 'rgba(255,255,255,0.03)',
-                      border: operator === 'orange' ? '2px solid #ff891d' : '2px solid rgba(255,255,255,0.08)',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <span style={{ fontSize: 24 }}>🟠</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: operator === 'orange' ? '#ff891d' : '#9d8fb5' }}>Orange Money</span>
-                  </button>
-                  <button
-                    onClick={() => setOperator('mtn')}
-                    style={{
-                      padding: '14px 12px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s',
-                      background: operator === 'mtn' ? 'rgba(255,204,0,0.12)' : 'rgba(255,255,255,0.03)',
-                      border: operator === 'mtn' ? '2px solid #ffcc00' : '2px solid rgba(255,255,255,0.08)',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <span style={{ fontSize: 24 }}>🟡</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: operator === 'mtn' ? '#ffcc00' : '#9d8fb5' }}>MTN MoMo</span>
-                  </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12 }}>
+                  {selectedCountry.operators.map(op => {
+                    const active = operator === op.code;
+                    return (
+                      <button
+                        key={op.code}
+                        onClick={() => { setOperator(op.code); setOtpCode(''); }}
+                        style={{
+                          padding: '14px 12px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s',
+                          background: active ? `${op.color}22` : 'rgba(255,255,255,0.03)',
+                          border: active ? `2px solid ${op.color}` : '2px solid rgba(255,255,255,0.08)',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                        }}
+                      >
+                        <span style={{ width: 22, height: 22, borderRadius: '50%', background: op.color, display: 'inline-block' }} />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: active ? op.color : '#9d8fb5' }}>{op.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Code OTP si l'opérateur l'exige */}
+              {selectedOperator.otp && (
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: '#7c6d94', textTransform: 'uppercase', marginBottom: 8 }}>Code OTP {selectedOperator.name}</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 123456"
+                    value={otpCode}
+                    onChange={e => setOtpCode(e.target.value)}
+                    className="input-purple"
+                    style={{ width: '100%' }}
+                  />
+                  <p style={{ fontSize: 11, color: '#7c6d94', marginTop: 8, lineHeight: 1.5 }}>
+                    💡 Génère un code de paiement depuis ton application {selectedOperator.name} ou via le code USSD de ton opérateur, puis saisis-le ici avant de payer.
+                  </p>
+                </div>
+              )}
 
               {error && (
                 <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '12px 16px', color: '#f87171', fontSize: 13, marginBottom: 16 }}>
@@ -278,7 +340,7 @@ export default function PanierPage() {
               </button>
 
               <p style={{ textAlign: 'center', fontSize: 11, color: '#5a4e6e', marginTop: 12 }}>
-                🔒 Paiement sécurisé · Orange Money · MTN MoMo
+                🔒 Paiement Mobile Money sécurisé · 12 pays d'Afrique
               </p>
             </div>
           </>

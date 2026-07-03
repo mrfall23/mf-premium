@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getSebpayCountry } from '@/lib/sebpay';
 
 export async function POST(req: NextRequest) {
   try {
-    const { customer, cart, total, operator } = await req.json();
+    const { customer, cart, total, country, operator, otp_code } = await req.json();
+
+    // Validate country + operator
+    const countryData = getSebpayCountry(country || 'CM');
+    if (!countryData) {
+      return NextResponse.json({ error: 'Pays non supporté' }, { status: 400 });
+    }
+    const operatorData = countryData.operators.find(o => o.code === operator);
+    if (!operatorData) {
+      return NextResponse.json({ error: 'Opérateur non supporté pour ce pays' }, { status: 400 });
+    }
+    if (operatorData.otp && !otp_code) {
+      return NextResponse.json({ error: 'Code OTP requis pour cet opérateur' }, { status: 400 });
+    }
 
     // Upsert customer
     const { data: existing } = await supabase
@@ -45,12 +59,23 @@ export async function POST(req: NextRequest) {
       }))
     );
 
-    // Format phone: remove leading 0 or + and ensure starts with 237
+    // Format phone: strip spaces and +, prepend country prefix if missing
     let phone = customer.phone.replace(/\s+/g, '').replace(/^\+/, '');
-    if (!phone.startsWith('237')) phone = '237' + phone;
+    if (!phone.startsWith(countryData.prefix)) phone = countryData.prefix + phone;
 
     // Call SebPay API
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const payload: Record<string, unknown> = {
+      amount: total,
+      currency: countryData.currency,
+      phone,
+      operator: operatorData.code,
+      country: countryData.code,
+      external_reference: order.id,
+      callback_url: `${siteUrl}/api/payment/webhook`,
+    };
+    if (otp_code) payload.otp_code = otp_code;
+
     const sebpayRes = await fetch('https://newapi.sebpay.bj/api/v1/collections', {
       method: 'POST',
       headers: {
@@ -58,15 +83,7 @@ export async function POST(req: NextRequest) {
         'X-Public-Key': process.env.SEBPAY_PUBLIC_KEY!,
         'X-Secret-Key': process.env.SEBPAY_SECRET_KEY!,
       },
-      body: JSON.stringify({
-        amount: total,
-        currency: 'XAF',
-        phone,
-        operator,
-        country: 'CM',
-        external_reference: order.id,
-        callback_url: `${siteUrl}/api/payment/webhook`,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const sebpayData = await sebpayRes.json();

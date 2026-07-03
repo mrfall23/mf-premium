@@ -31,11 +31,32 @@ export default function PanierPage() {
   const [operator, setOperator] = useState<'orange' | 'mtn'>('orange');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [redirecting, setRedirecting] = useState(false);
+  const [waiting, setWaiting] = useState(false);
+  const [payStatus, setPayStatus] = useState<'pending' | 'paid' | 'failed'>('pending');
   const [orderId, setOrderId] = useState('');
   const [total, setTotal] = useState(0);
 
   useEffect(() => { setCart(getCart()); }, []);
+
+  // Poll payment status while waiting
+  useEffect(() => {
+    if (!waiting || !orderId || payStatus !== 'pending') return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payment/status?order_id=${orderId}`);
+        const data = await res.json();
+        if (data.status === 'paid') {
+          setPayStatus('paid');
+          clearInterval(interval);
+          setTimeout(() => { window.location.href = `/commande/${orderId}`; }, 1500);
+        } else if (data.status === 'failed') {
+          setPayStatus('failed');
+          clearInterval(interval);
+        }
+      } catch { /* retry next tick */ }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [waiting, orderId, payStatus]);
 
   const cartTotal = getCartTotal(cart);
 
@@ -66,8 +87,11 @@ export default function PanierPage() {
       window.dispatchEvent(new Event('cart-updated'));
 
       if (data.payment_url) {
-        setRedirecting(true);
-        setTimeout(() => { window.location.href = data.payment_url; }, 2000);
+        // Some operators use a redirect page
+        window.location.href = data.payment_url;
+      } else {
+        // Orange/MTN: push USSD sent to the customer's phone
+        setWaiting(true);
       }
     } catch {
       setError('Erreur de connexion. Vérifiez votre internet.');
@@ -76,26 +100,63 @@ export default function PanierPage() {
     }
   };
 
-  // ── Redirecting screen ──
-  if (redirecting && orderId) {
+  // ── Waiting for phone confirmation screen ──
+  if (waiting && orderId) {
     const ref = '#' + orderId.slice(0, 8).toUpperCase();
+    const opName = operator === 'orange' ? 'Orange Money' : 'MTN MoMo';
+    const ussd = operator === 'orange' ? '#150#' : '*126#';
+
     return (
       <div style={{ paddingTop: 64, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="animate-fadeInUp" style={{ maxWidth: 480, margin: '0 auto', padding: '40px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 56, marginBottom: 20 }}>💳</div>
-          <h1 style={{ fontFamily: 'var(--font-orbitron)', fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: 2, marginBottom: 12 }}>
-            REDIRECTION EN COURS...
-          </h1>
-          <p style={{ color: '#9d8fb5', fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
-            Tu vas être redirigé vers la page de paiement {operator === 'orange' ? 'Orange Money' : 'MTN MoMo'}.<br />
-            Note bien ta référence commande :
-          </p>
-          <div style={{ fontFamily: 'var(--font-orbitron)', fontSize: 22, fontWeight: 900, color: '#a855f7', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 12, padding: '14px 24px', marginBottom: 24 }}>
-            {ref}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <Loader2 style={{ width: 28, height: 28, color: '#a855f7', animation: 'spin 1s linear infinite' }} />
-          </div>
+        <div className="animate-fadeInUp" style={{ maxWidth: 500, margin: '0 auto', padding: '40px 24px', textAlign: 'center' }}>
+
+          {payStatus === 'paid' ? (
+            <>
+              <div style={{ fontSize: 56, marginBottom: 20 }}>✅</div>
+              <h1 style={{ fontFamily: 'var(--font-orbitron)', fontSize: 20, fontWeight: 900, color: '#4ade80', letterSpacing: 2, marginBottom: 12 }}>
+                PAIEMENT CONFIRMÉ !
+              </h1>
+              <p style={{ color: '#9d8fb5', fontSize: 14 }}>Redirection vers ta commande...</p>
+            </>
+          ) : payStatus === 'failed' ? (
+            <>
+              <div style={{ fontSize: 56, marginBottom: 20 }}>❌</div>
+              <h1 style={{ fontFamily: 'var(--font-orbitron)', fontSize: 20, fontWeight: 900, color: '#f87171', letterSpacing: 2, marginBottom: 12 }}>
+                PAIEMENT ÉCHOUÉ
+              </h1>
+              <p style={{ color: '#9d8fb5', fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
+                Le paiement a été refusé ou a expiré.<br />Réessaie ou contacte-nous sur WhatsApp.
+              </p>
+              <Link href="/boutique" className="btn-purple" style={{ padding: '12px 28px', fontSize: 12, textDecoration: 'none', display: 'inline-block' }}>
+                RETOUR À LA BOUTIQUE
+              </Link>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 56, marginBottom: 20 }}>📲</div>
+              <h1 style={{ fontFamily: 'var(--font-orbitron)', fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: 2, marginBottom: 12 }}>
+                CONFIRME SUR TON TÉLÉPHONE
+              </h1>
+              <p style={{ color: '#9d8fb5', fontSize: 14, marginBottom: 20, lineHeight: 1.7 }}>
+                Une demande de paiement <strong style={{ color: '#e8e0f7' }}>{opName}</strong> de{' '}
+                <strong style={{ color: '#a855f7' }}>{total.toLocaleString()} FCFA</strong> a été envoyée au{' '}
+                <strong style={{ color: '#e8e0f7' }}>{customer.phone}</strong>.
+              </p>
+              <div style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: 14, padding: '16px 20px', marginBottom: 20, textAlign: 'left' }}>
+                <div style={{ fontSize: 12, color: '#c084fc', fontWeight: 600, marginBottom: 8 }}>💡 Tu n'as pas reçu la demande ?</div>
+                <div style={{ fontSize: 13, color: '#9d8fb5', lineHeight: 1.6 }}>
+                  Tape <strong style={{ color: '#fff', fontFamily: 'var(--font-orbitron)' }}>{ussd}</strong> sur ton téléphone pour valider la transaction en attente.
+                </div>
+              </div>
+              <div style={{ fontFamily: 'var(--font-orbitron)', fontSize: 14, color: '#7c6d94', marginBottom: 20 }}>
+                Référence : <span style={{ color: '#a855f7', fontWeight: 700 }}>{ref}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#a855f7', fontSize: 13 }}>
+                <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} />
+                Vérification automatique du paiement...
+              </div>
+            </>
+          )}
         </div>
       </div>
     );

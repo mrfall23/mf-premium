@@ -75,6 +75,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: sebpayData.message || 'Erreur paiement' }, { status: 400 });
     }
 
+    // Store SebPay transaction id for status checks
+    if (sebpayData.data?.transaction_id) {
+      await supabase
+        .from('orders')
+        .update({ payment_reference: sebpayData.data.transaction_id })
+        .eq('id', order.id);
+    }
+
     return NextResponse.json({
       order_id: order.id,
       total,

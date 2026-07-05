@@ -47,18 +47,6 @@ export async function POST(req: NextRequest) {
       .single();
     if (oe || !order) return NextResponse.json({ error: 'Erreur création commande' }, { status: 500 });
 
-    // Create order items
-    await supabase.from('order_items').insert(
-      cart.map((item: { id: string; name: string; price: number; duration: string; quantity: number }) => ({
-        order_id: order.id,
-        product_id: item.id,
-        product_name: item.name,
-        price: item.price,
-        duration: item.duration,
-        quantity: item.quantity,
-      }))
-    );
-
     // Format phone: strip spaces and +, prepend country prefix if missing
     let phone = customer.phone.replace(/\s+/g, '').replace(/^\+/, '');
     if (!phone.startsWith(countryData.prefix)) phone = countryData.prefix + phone;
@@ -76,15 +64,28 @@ export async function POST(req: NextRequest) {
     };
     if (otp_code) payload.otp_code = otp_code;
 
-    const sebpayRes = await fetch('https://newapi.sebpay.bj/api/v1/collections', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Public-Key': process.env.SEBPAY_PUBLIC_KEY!,
-        'X-Secret-Key': process.env.SEBPAY_SECRET_KEY!,
-      },
-      body: JSON.stringify(payload),
-    });
+    // Create order items in parallel with the SebPay call — both only depend on order.id
+    const [sebpayRes] = await Promise.all([
+      fetch('https://newapi.sebpay.bj/api/v1/collections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Public-Key': process.env.SEBPAY_PUBLIC_KEY!,
+          'X-Secret-Key': process.env.SEBPAY_SECRET_KEY!,
+        },
+        body: JSON.stringify(payload),
+      }),
+      supabase.from('order_items').insert(
+        cart.map((item: { id: string; name: string; price: number; duration: string; quantity: number }) => ({
+          order_id: order.id,
+          product_id: item.id,
+          product_name: item.name,
+          price: item.price,
+          duration: item.duration,
+          quantity: item.quantity,
+        }))
+      ),
+    ]);
 
     const sebpayData = await sebpayRes.json();
 
@@ -92,12 +93,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: sebpayData.message || 'Erreur paiement' }, { status: 400 });
     }
 
-    // Store SebPay transaction id for status checks
+    // Store SebPay transaction id for status checks — fire and forget, not needed to respond to client
     if (sebpayData.data?.transaction_id) {
-      await supabase
+      supabase
         .from('orders')
         .update({ payment_reference: sebpayData.data.transaction_id })
-        .eq('id', order.id);
+        .eq('id', order.id)
+        .then();
     }
 
     return NextResponse.json({

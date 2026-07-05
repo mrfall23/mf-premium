@@ -33,6 +33,33 @@ export default async function CommandePage({ params }: Props) {
   const isPaid = order.status === 'paid';
   const isPending = order.status === 'pending';
 
+  const ref = '#' + id.slice(0, 8).toUpperCase();
+  const items: { product_name: string; duration: string; price: number; quantity: number }[] = order.order_items || [];
+  const itemLines = items.map(item => `  • ${item.product_name} — ${item.duration} — ${item.price.toLocaleString()} FCFA`).join('\n');
+  const statusLine = isPaid
+    ? '✅ Paiement confirmé — merci de me communiquer mes accès.'
+    : isPending
+    ? '⏳ Mon paiement est en attente de confirmation.'
+    : '❌ Mon paiement a échoué, merci de me contacter.';
+
+  const waMsg = encodeURIComponent(
+`🛒 COMMANDE — MF PREMIUM
+
+📋 Référence : ${ref}
+
+👤 Client
+  Nom : ${order.customers?.name}
+  Téléphone : ${order.customers?.phone}
+  Email : ${order.customers?.email}
+
+🎬 Abonnement(s) commandé(s)
+${itemLines}
+
+💰 Total : ${order.total_amount?.toLocaleString()} FCFA
+
+${statusLine}`
+  );
+
   return (
     <div style={{ paddingTop: 64, minHeight: '100vh' }}>
       <div className="animate-fadeInUp" style={{ maxWidth: 600, margin: '0 auto', padding: 'clamp(40px,8vw,80px) clamp(16px,4vw,40px)' }}>
@@ -119,7 +146,7 @@ export default async function CommandePage({ params }: Props) {
             NOUVELLE COMMANDE
           </Link>
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=Bonjour, j'ai passé la commande %23${id.slice(0, 8).toUpperCase()}`}
+            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${waMsg}`}
             target="_blank" rel="noopener noreferrer"
             className="btn-outline-purple"
             style={{ flex: 1, padding: '12px 20px', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 140 }}

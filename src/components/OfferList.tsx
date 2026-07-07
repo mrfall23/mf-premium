@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 interface Props {
   variants: Product[];
+  images?: Record<string, string | null>;
 }
 
 const durationLabel: Record<string, string> = {
@@ -16,7 +17,7 @@ const durationLabel: Record<string, string> = {
   '1 an': '1 An',
 };
 
-function OfferCard({ product, onAdded }: { product: Product; onAdded: () => void }) {
+function OfferCard({ product, image, onAdded }: { product: Product; image?: string | null; onAdded: () => void }) {
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
@@ -38,6 +39,16 @@ function OfferCard({ product, onAdded }: { product: Product; onAdded: () => void
       textAlign: 'center', gap: 12,
       ...(isPopular ? { borderColor: 'rgba(168,85,247,0.6)', boxShadow: '0 0 32px rgba(168,85,247,0.2)' } : {}),
     }}>
+      {image && (
+        <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image}
+            alt={`${product.name} ${label}`}
+            style={{ width: '100%', height: 130, objectFit: 'cover', display: 'block' }}
+          />
+        </div>
+      )}
       {isPopular && (
         <div style={{
           position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)',
@@ -82,7 +93,7 @@ function OfferCard({ product, onAdded }: { product: Product; onAdded: () => void
   );
 }
 
-export default function OfferList({ variants }: Props) {
+export default function OfferList({ variants, images }: Props) {
   const [hasAdded, setHasAdded] = useState(false);
 
   return (
@@ -93,7 +104,7 @@ export default function OfferList({ variants }: Props) {
         gap: 20, alignItems: 'stretch',
       }}>
         {variants.map(v => (
-          <OfferCard key={v.id} product={v} onAdded={() => setHasAdded(true)} />
+          <OfferCard key={v.id} product={v} image={images?.[v.id]} onAdded={() => setHasAdded(true)} />
         ))}
       </div>
 

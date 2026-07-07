@@ -48,3 +48,4 @@ export const DURATION_NOTES: Record<string, string> = {
   '6 mois': 'Économisez 15%',
   '1 an': 'Meilleur prix',
 };
+

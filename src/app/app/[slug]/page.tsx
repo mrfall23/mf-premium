@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/types';
 import { getServiceMeta, slugify, DURATION_ORDER } from '@/lib/catalog';
+import { getProductHeroImage, getOfferImage } from '@/lib/catalog-images';
 import OfferList from '@/components/OfferList';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -53,6 +54,9 @@ export default async function AppOffresPage({ params }: Props) {
   const name = variants[0].name;
   const description = variants[0].description;
   const meta = getServiceMeta(name);
+  const heroImage = getProductHeroImage(slug);
+  const offerImages: Record<string, string | null> = {};
+  for (const v of variants) offerImages[v.id] = getOfferImage(slug, v.duration);
 
   return (
     <div style={{ paddingTop: 64, paddingBottom: 80 }}>
@@ -64,6 +68,25 @@ export default async function AppOffresPage({ params }: Props) {
           <span style={{ color: '#5a4e6e' }}>›</span>
           <span style={{ color: '#a855f7', fontWeight: 600 }}>{name}</span>
         </div>
+
+        {/* Bannière image (si fournie) */}
+        {heroImage && (
+          <div style={{
+            position: 'relative', borderRadius: 20, overflow: 'hidden',
+            marginBottom: 32, border: '1px solid rgba(168,85,247,0.2)',
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroImage}
+              alt={`Bannière ${name}`}
+              style={{ width: '100%', height: 'clamp(160px,28vw,280px)', objectFit: 'cover', display: 'block' }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to top, rgba(5,5,8,0.75) 0%, transparent 55%)',
+            }} />
+          </div>
+        )}
 
         {/* En-tête produit */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -94,7 +117,7 @@ export default async function AppOffresPage({ params }: Props) {
           color: '#fff', letterSpacing: 2, marginBottom: 28,
         }}>CHOISISSEZ VOTRE OFFRE</h2>
 
-        <OfferList variants={variants} />
+        <OfferList variants={variants} images={offerImages} />
 
         {/* Réassurance */}
         <div style={{

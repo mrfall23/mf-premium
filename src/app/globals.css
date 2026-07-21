@@ -30,6 +30,11 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+/* Bannière promo : défilement horizontal en boucle (piste = 3 copies) */
+@keyframes promo-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-33.333%); }
+}
 
 .animate-fadeInUp { animation: fadeInUp 0.5s ease both; }
 .animate-glow-pulse { animation: glow-pulse 4s ease-in-out infinite; }

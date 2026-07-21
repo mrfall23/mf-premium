@@ -26,6 +26,22 @@ interface Product {
   is_active: boolean;
 }
 
+interface Promo {
+  id: string;
+  message: string;
+  ends_at: string;
+  is_active: boolean;
+}
+
+const DEFAULT_PROMO = '🔥 OFFRE LIMITÉE — 1 MOIS ACHETÉ = 1 MOIS OFFERT ! Doublez votre abonnement : payez-en un, profitez-en deux 🎬🎵';
+
+const TAB_LABELS: Record<string, string> = {
+  overview: 'Vue générale',
+  orders: 'Commandes',
+  products: 'Produits',
+  promos: 'Promotions',
+};
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats>({ totalCustomers: 0, totalOrders: 0, totalRevenue: 0 });
@@ -34,6 +50,10 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '', price: '', duration: '1 mois', category: 'streaming' });
+  const [promo, setPromo] = useState<Promo | null>(null);
+  const [promoForm, setPromoForm] = useState({ message: DEFAULT_PROMO, ends_at: '' });
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoNote, setPromoNote] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('mf_admin')) {
@@ -56,6 +76,48 @@ export default function AdminDashboard() {
     setStats({ totalCustomers: customersCount || 0, totalOrders: ordersCount || 0, totalRevenue });
     setOrders((ordersData as Order[]) || []);
     setProducts(productsData || []);
+
+    // Promo active en cours (table absente = pas de promo, on ignore l'erreur)
+    const { data: promoData } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    setPromo(promoData && promoData.length ? (promoData[0] as Promo) : null);
+  };
+
+  const handlePublishPromo = async () => {
+    if (!promoForm.message.trim() || !promoForm.ends_at) {
+      setPromoNote('⚠️ Message et date de fin obligatoires.');
+      return;
+    }
+    setPromoBusy(true);
+    setPromoNote('');
+    const iso = new Date(promoForm.ends_at).toISOString();
+    const res = await fetch('/api/admin/promo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'publish', message: promoForm.message, ends_at: iso }),
+    });
+    const d = await res.json();
+    setPromoBusy(false);
+    if (res.ok) { setPromoNote('✅ Bannière publiée ! Elle s\'affiche sur le site.'); loadData(); }
+    else setPromoNote('⚠️ ' + (d.error || 'Erreur'));
+  };
+
+  const handleStopPromo = async () => {
+    if (!confirm('Arrêter la promo en cours ? La bannière disparaîtra du site.')) return;
+    setPromoBusy(true);
+    setPromoNote('');
+    const res = await fetch('/api/admin/promo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'stop' }),
+    });
+    setPromoBusy(false);
+    if (res.ok) { setPromoNote('Promo arrêtée.'); loadData(); }
+    else setPromoNote('⚠️ Erreur lors de l\'arrêt.');
   };
 
   const handleDeleteProduct = async (id: string) => {
@@ -110,7 +172,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex gap-2 mb-8 border-b border-white/10">
-          {['overview', 'orders', 'products'].map((tab) => (
+          {['overview', 'orders', 'products', 'promos'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -118,7 +180,7 @@ export default function AdminDashboard() {
                 activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'
               }`}
             >
-              {tab === 'overview' ? 'Vue générale' : tab === 'orders' ? 'Commandes' : 'Produits'}
+              {TAB_LABELS[tab]}
             </button>
           ))}
         </div>
@@ -243,6 +305,63 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'promos' && (
+          <div className="max-w-2xl">
+            <h2 className="text-xl font-semibold mb-1">Bannière promotionnelle</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              Ce message défile en haut du site premium-mf.com avec un compte à rebours jusqu&apos;à la date de fin. Une seule promo active à la fois.
+            </p>
+
+            {promo && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-6">
+                <p className="text-green-400 text-sm font-medium mb-2">🟢 Promo en cours sur le site</p>
+                <p className="text-white">{promo.message}</p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Se termine le {new Date(promo.ends_at).toLocaleString('fr-FR')}
+                </p>
+                <button
+                  onClick={handleStopPromo}
+                  disabled={promoBusy}
+                  className="mt-4 bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600/30 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+                >
+                  Arrêter la promo
+                </button>
+              </div>
+            )}
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+              <h3 className="font-semibold">{promo ? 'Remplacer la bannière' : 'Créer une bannière'}</h3>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Message de la bannière</label>
+                <textarea
+                  value={promoForm.message}
+                  onChange={(e) => setPromoForm({ ...promoForm, message: e.target.value })}
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Fin de la promo (date et heure)</label>
+                <input
+                  type="datetime-local"
+                  value={promoForm.ends_at}
+                  onChange={(e) => setPromoForm({ ...promoForm, ends_at: e.target.value })}
+                  style={{ colorScheme: 'dark' }}
+                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              {promoNote && <p className="text-sm text-gray-200">{promoNote}</p>}
+              <button
+                onClick={handlePublishPromo}
+                disabled={promoBusy}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-60"
+              >
+                {promoBusy ? 'Publication…' : promo ? 'Remplacer la bannière' : 'Publier la bannière'}
+              </button>
             </div>
           </div>
         )}

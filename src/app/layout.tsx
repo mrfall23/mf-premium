@@ -4,6 +4,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import PromoBanner from '@/components/PromoBanner';
 
 const orbitron = Orbitron({
   subsets: ['latin'],
@@ -39,9 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           backgroundSize: '48px 48px',
         }} />
 
+        <PromoBanner />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <Navbar />
-          <main>{children}</main>
+          <main style={{ paddingTop: 'var(--promo-h, 0px)' }}>{children}</main>
           <Footer />
         </div>
         <WhatsAppButton />

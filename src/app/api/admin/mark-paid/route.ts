@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isAdmin } from '@/lib/admin-auth';
 
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,8 @@ const adminSupabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
   const { order_id } = await req.json();
   if (!order_id) return NextResponse.json({ error: 'order_id requis' }, { status: 400 });
 

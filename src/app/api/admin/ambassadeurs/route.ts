@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { referralAdmin, normalizeCode } from '@/lib/referral';
+import { isAdmin } from '@/lib/admin-auth';
 
 // Keep percentages sane even if the (currently unauthenticated) admin surface
 // is abused — a code can never wipe out a price or an entire margin.
@@ -10,7 +11,9 @@ function clampPct(v: unknown): number {
 }
 
 // GET: list ambassadors with their sales stats (paid orders only).
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
   const { data: ambs, error } = await referralAdmin
     .from('ambassadeurs')
     .select('*')
@@ -44,6 +47,8 @@ export async function GET() {
 
 // POST: create an ambassador.
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
   const body = await req.json();
   const nom = String(body.nom || '').trim();
   const code = normalizeCode(body.code);
@@ -72,6 +77,8 @@ export async function POST(req: NextRequest) {
 // PATCH: update an ambassador (name, percentages, active flag). Code is immutable
 // once created so existing sales stay correctly attributed.
 export async function PATCH(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
   const body = await req.json();
   const id = body.id;
   if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 });

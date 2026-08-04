@@ -14,13 +14,25 @@ export default function AdminLogin() {
     setLoading(true);
     setError('');
 
-    if (email === 'mrfallnetflix4@gmail.com') {
-      localStorage.setItem('mf_admin', 'true');
-      router.push('/admin/dashboard');
-    } else {
-      setError('Email ou mot de passe incorrect.');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        // Le mot de passe sert de jeton pour les appels API admin (header x-admin-token).
+        localStorage.setItem('mf_admin', password);
+        router.push('/admin/dashboard');
+      } else {
+        const d = await res.json();
+        setError(d.error || 'Email ou mot de passe incorrect.');
+      }
+    } catch {
+      setError('Erreur de connexion.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isAdmin } from '@/lib/admin-auth';
 
 // Client service role : écrit dans Supabase en contournant la RLS (comme mark-paid).
 const adminSupabase = createClient(
@@ -8,6 +9,8 @@ const adminSupabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
   const body = await req.json();
   const action = body.action;
 

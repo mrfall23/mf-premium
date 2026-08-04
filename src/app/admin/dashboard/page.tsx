@@ -55,6 +55,12 @@ interface Ambassadeur {
   commission_due: number;
 }
 
+// Jeton admin (le mot de passe stocké au login) envoyé sur chaque appel /api/admin/*.
+const adminHeaders = (): Record<string, string> => ({
+  'Content-Type': 'application/json',
+  'x-admin-token': typeof window !== 'undefined' ? (localStorage.getItem('mf_admin') || '') : '',
+});
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats>({ totalCustomers: 0, totalOrders: 0, totalRevenue: 0 });
@@ -106,7 +112,8 @@ export default function AdminDashboard() {
 
     // Ambassadeurs + stats (via API service-role)
     try {
-      const res = await fetch('/api/admin/ambassadeurs');
+      const res = await fetch('/api/admin/ambassadeurs', { headers: adminHeaders() });
+      if (res.status === 401) { router.push('/admin/login'); return; }
       const d = await res.json();
       setAmbassadeurs(d.ambassadeurs || []);
     } catch { /* table absente ou erreur réseau : on ignore */ }
@@ -128,7 +135,7 @@ export default function AdminDashboard() {
     const isEdit = !!editingAmb;
     const res = await fetch('/api/admin/ambassadeurs', {
       method: isEdit ? 'PATCH' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminHeaders(),
       body: JSON.stringify(
         isEdit
           ? { id: editingAmb, nom: ambForm.nom, remise_pct: Number(ambForm.remise_pct), commission_pct: Number(ambForm.commission_pct) }
@@ -144,7 +151,7 @@ export default function AdminDashboard() {
   const handleToggleAmb = async (a: Ambassadeur) => {
     await fetch('/api/admin/ambassadeurs', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminHeaders(),
       body: JSON.stringify({ id: a.id, actif: !a.actif }),
     });
     loadData();
@@ -166,7 +173,7 @@ export default function AdminDashboard() {
     const iso = new Date(promoForm.ends_at).toISOString();
     const res = await fetch('/api/admin/promo', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminHeaders(),
       body: JSON.stringify({ action: 'publish', message: promoForm.message, ends_at: iso }),
     });
     const d = await res.json();
@@ -181,7 +188,7 @@ export default function AdminDashboard() {
     setPromoNote('');
     const res = await fetch('/api/admin/promo', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminHeaders(),
       body: JSON.stringify({ action: 'stop' }),
     });
     setPromoBusy(false);
@@ -212,7 +219,7 @@ export default function AdminDashboard() {
   const handleMarkPaid = async (order: Order) => {
     const res = await fetch('/api/admin/mark-paid', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminHeaders(),
       body: JSON.stringify({ order_id: order.id }),
     });
     if (res.ok) loadData();

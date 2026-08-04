@@ -30,14 +30,38 @@ export default function PanierPage() {
   const [customer, setCustomer] = useState<Customer>({ name: '', phone: '', email: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [code, setCode] = useState('');
+  const [codeChecking, setCodeChecking] = useState(false);
+  const [codeInfo, setCodeInfo] = useState<{ valid: boolean; nom?: string; remise_pct?: number; remise_montant?: number; new_total?: number; message?: string } | null>(null);
 
   useEffect(() => { setCart(getCart()); }, []);
 
   const cartTotal = getCartTotal(cart);
+  const remise = codeInfo?.valid ? (codeInfo.remise_montant || 0) : 0;
+  const totalToPay = Math.max(0, cartTotal - remise);
 
   const handleRemove = (id: string) => {
     setCart(removeFromCart(id));
     window.dispatchEvent(new Event('cart-updated'));
+    setCodeInfo(null); // le total a changé, on invalide la remise affichée
+  };
+
+  const applyCode = async () => {
+    if (!code.trim()) { setCodeInfo(null); return; }
+    setCodeChecking(true);
+    setCodeInfo(null);
+    try {
+      const res = await fetch('/api/referral/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, total: cartTotal }),
+      });
+      setCodeInfo(await res.json());
+    } catch {
+      setCodeInfo({ valid: false, message: 'Erreur de vérification.' });
+    } finally {
+      setCodeChecking(false);
+    }
   };
 
   const handleOrder = async () => {
@@ -51,7 +75,7 @@ export default function PanierPage() {
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer, cart, total: cartTotal }),
+        body: JSON.stringify({ customer, cart, total: cartTotal, code: codeInfo?.valid ? code : undefined }),
       });
       const data = await res.json();
       if (data.error || !data.payment_url) {
@@ -138,6 +162,53 @@ export default function PanierPage() {
                 </div>
               </div>
 
+              {/* Code ambassadeur / promo */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: '#7c6d94', textTransform: 'uppercase', marginBottom: 8 }}>Code ambassadeur <span style={{ textTransform: 'none', color: '#5a4e6e' }}>(optionnel)</span></label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder="Ex : MARIE"
+                    value={code}
+                    onChange={e => { setCode(e.target.value.toUpperCase()); setCodeInfo(null); }}
+                    onBlur={applyCode}
+                    className="input-purple"
+                    style={{ flex: 1, textTransform: 'uppercase' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCode}
+                    disabled={codeChecking || !code.trim()}
+                    className="btn-outline-purple"
+                    style={{ padding: '0 18px', fontSize: 12, cursor: codeChecking || !code.trim() ? 'not-allowed' : 'pointer', opacity: codeChecking || !code.trim() ? 0.5 : 1, whiteSpace: 'nowrap' }}
+                  >
+                    {codeChecking ? '...' : 'Appliquer'}
+                  </button>
+                </div>
+                {codeInfo && (
+                  <p style={{ fontSize: 12, marginTop: 8, color: codeInfo.valid ? '#4ade80' : '#f0a35e' }}>
+                    {codeInfo.valid
+                      ? `✅ Code ${codeInfo.nom} appliqué : −${codeInfo.remise_pct}% (−${(codeInfo.remise_montant || 0).toLocaleString()} FCFA)`
+                      : `ℹ️ ${codeInfo.message || 'Code invalide.'}`}
+                  </p>
+                )}
+              </div>
+
+              {/* Récap remise */}
+              {remise > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, paddingTop: 16, borderTop: '1px solid rgba(168,85,247,0.15)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9d8fb5' }}>
+                    <span>Sous-total</span><span>{cartTotal.toLocaleString()} FCFA</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4ade80' }}>
+                    <span>Remise ({codeInfo?.nom})</span><span>−{remise.toLocaleString()} FCFA</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-orbitron)', fontSize: 16, fontWeight: 900, color: '#fff', marginTop: 4 }}>
+                    <span>À PAYER</span><span style={{ color: '#a855f7' }}>{totalToPay.toLocaleString()} FCFA</span>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '12px 16px', color: '#f87171', fontSize: 13, marginBottom: 16 }}>
                   {error}
@@ -150,7 +221,7 @@ export default function PanierPage() {
               }}>
                 {loading
                   ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Redirection vers le paiement...</>
-                  : `Payer ${cartTotal.toLocaleString()} FCFA →`}
+                  : `Payer ${totalToPay.toLocaleString()} FCFA →`}
               </button>
 
               <p style={{ textAlign: 'center', fontSize: 11, color: '#5a4e6e', marginTop: 12 }}>

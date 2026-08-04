@@ -40,7 +40,20 @@ const TAB_LABELS: Record<string, string> = {
   orders: 'Commandes',
   products: 'Produits',
   promos: 'Promotions',
+  ambassadeurs: 'Ambassadeurs',
 };
+
+interface Ambassadeur {
+  id: string;
+  nom: string;
+  code: string;
+  remise_pct: number;
+  commission_pct: number;
+  actif: boolean;
+  ventes: number;
+  total_genere: number;
+  commission_due: number;
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -54,6 +67,11 @@ export default function AdminDashboard() {
   const [promoForm, setPromoForm] = useState({ message: DEFAULT_PROMO, ends_at: '' });
   const [promoBusy, setPromoBusy] = useState(false);
   const [promoNote, setPromoNote] = useState('');
+  const [ambassadeurs, setAmbassadeurs] = useState<Ambassadeur[]>([]);
+  const [ambForm, setAmbForm] = useState({ nom: '', code: '', remise_pct: '10', commission_pct: '15' });
+  const [ambBusy, setAmbBusy] = useState(false);
+  const [ambNote, setAmbNote] = useState('');
+  const [editingAmb, setEditingAmb] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('mf_admin')) {
@@ -85,6 +103,57 @@ export default function AdminDashboard() {
       .order('created_at', { ascending: false })
       .limit(1);
     setPromo(promoData && promoData.length ? (promoData[0] as Promo) : null);
+
+    // Ambassadeurs + stats (via API service-role)
+    try {
+      const res = await fetch('/api/admin/ambassadeurs');
+      const d = await res.json();
+      setAmbassadeurs(d.ambassadeurs || []);
+    } catch { /* table absente ou erreur réseau : on ignore */ }
+  };
+
+  const resetAmbForm = () => {
+    setAmbForm({ nom: '', code: '', remise_pct: '10', commission_pct: '15' });
+    setEditingAmb(null);
+    setAmbNote('');
+  };
+
+  const handleSaveAmb = async () => {
+    if (!ambForm.nom.trim() || (!editingAmb && !ambForm.code.trim())) {
+      setAmbNote('⚠️ Nom et code obligatoires.');
+      return;
+    }
+    setAmbBusy(true);
+    setAmbNote('');
+    const isEdit = !!editingAmb;
+    const res = await fetch('/api/admin/ambassadeurs', {
+      method: isEdit ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(
+        isEdit
+          ? { id: editingAmb, nom: ambForm.nom, remise_pct: Number(ambForm.remise_pct), commission_pct: Number(ambForm.commission_pct) }
+          : { nom: ambForm.nom, code: ambForm.code, remise_pct: Number(ambForm.remise_pct), commission_pct: Number(ambForm.commission_pct) }
+      ),
+    });
+    const d = await res.json();
+    setAmbBusy(false);
+    if (res.ok) { resetAmbForm(); loadData(); }
+    else setAmbNote('⚠️ ' + (d.error || 'Erreur'));
+  };
+
+  const handleToggleAmb = async (a: Ambassadeur) => {
+    await fetch('/api/admin/ambassadeurs', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: a.id, actif: !a.actif }),
+    });
+    loadData();
+  };
+
+  const startEditAmb = (a: Ambassadeur) => {
+    setEditingAmb(a.id);
+    setAmbForm({ nom: a.nom, code: a.code, remise_pct: String(a.remise_pct), commission_pct: String(a.commission_pct) });
+    setAmbNote('');
   };
 
   const handlePublishPromo = async () => {
@@ -172,7 +241,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex gap-2 mb-8 border-b border-white/10">
-          {['overview', 'orders', 'products', 'promos'].map((tab) => (
+          {['overview', 'orders', 'products', 'promos', 'ambassadeurs'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -362,6 +431,89 @@ export default function AdminDashboard() {
               >
                 {promoBusy ? 'Publication…' : promo ? 'Remplacer la bannière' : 'Publier la bannière'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ambassadeurs' && (
+          <div>
+            <h2 className="text-xl font-semibold mb-1">Ambassadeurs</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              Chaque ambassadeur a un code que le client saisit au panier : il obtient la remise, et tu vois la commission à lui verser. Le code ne s&apos;applique pas pendant une promotion.
+            </p>
+
+            {/* Formulaire ajout / modification */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 max-w-2xl">
+              <h3 className="font-semibold mb-4">{editingAmb ? `Modifier « ${ambForm.nom} »` : 'Ajouter un ambassadeur'}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-400 mb-1 block">Nom</label>
+                  <input value={ambForm.nom} onChange={(e) => setAmbForm({ ...ambForm, nom: e.target.value })} placeholder="Marie Ndongo" className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 mb-1 block">Code {editingAmb && <span className="text-gray-500">(non modifiable)</span>}</label>
+                  <input value={ambForm.code} onChange={(e) => setAmbForm({ ...ambForm, code: e.target.value.toUpperCase() })} disabled={!!editingAmb} placeholder="MARIE" className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2 text-white uppercase focus:outline-none focus:border-blue-500 disabled:opacity-50" />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 mb-1 block">Remise client (%)</label>
+                  <input type="number" min={0} max={90} value={ambForm.remise_pct} onChange={(e) => setAmbForm({ ...ambForm, remise_pct: e.target.value })} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 mb-1 block">Commission ambassadeur (%)</label>
+                  <input type="number" min={0} max={90} value={ambForm.commission_pct} onChange={(e) => setAmbForm({ ...ambForm, commission_pct: e.target.value })} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500" />
+                </div>
+              </div>
+              {ambNote && <p className="text-sm text-gray-200 mt-3">{ambNote}</p>}
+              <div className="flex gap-3 mt-4">
+                <button onClick={handleSaveAmb} disabled={ambBusy} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold transition-all disabled:opacity-60">
+                  {ambBusy ? 'Enregistrement…' : editingAmb ? 'Enregistrer les modifications' : 'Ajouter'}
+                </button>
+                {editingAmb && (
+                  <button onClick={resetAmbForm} className="text-gray-400 hover:text-white px-4 py-2 transition-colors">Annuler</button>
+                )}
+              </div>
+            </div>
+
+            {/* Tableau récap */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/10 text-gray-400 text-sm">
+                    <th className="pb-3 pr-4">Ambassadeur</th>
+                    <th className="pb-3 pr-4">Code</th>
+                    <th className="pb-3 pr-4">Remise</th>
+                    <th className="pb-3 pr-4">Commission</th>
+                    <th className="pb-3 pr-4">Ventes</th>
+                    <th className="pb-3 pr-4">Total généré</th>
+                    <th className="pb-3 pr-4">À verser</th>
+                    <th className="pb-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {ambassadeurs.length === 0 && (
+                    <tr><td colSpan={8} className="py-6 text-gray-500 text-sm">Aucun ambassadeur pour l&apos;instant.</td></tr>
+                  )}
+                  {ambassadeurs.map((a) => (
+                    <tr key={a.id} className={`text-sm ${a.actif ? '' : 'opacity-50'}`}>
+                      <td className="py-3 pr-4 font-medium">{a.nom}</td>
+                      <td className="py-3 pr-4 font-mono text-blue-400">{a.code}</td>
+                      <td className="py-3 pr-4">{a.remise_pct}%</td>
+                      <td className="py-3 pr-4">{a.commission_pct}%</td>
+                      <td className="py-3 pr-4">{a.ventes}</td>
+                      <td className="py-3 pr-4">{a.total_genere.toLocaleString()} FCFA</td>
+                      <td className="py-3 pr-4 font-bold text-yellow-400">{a.commission_due.toLocaleString()} FCFA</td>
+                      <td className="py-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => startEditAmb(a)} className="bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-lg px-2 py-1 text-xs transition-colors">Modifier</button>
+                          <button onClick={() => handleToggleAmb(a)} className={`rounded-lg px-2 py-1 text-xs border transition-colors ${a.actif ? 'bg-red-600/20 text-red-400 border-red-600/30 hover:bg-red-600/40' : 'bg-green-600/20 text-green-400 border-green-600/30 hover:bg-green-600/40'}`}>
+                            {a.actif ? 'Désactiver' : 'Activer'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

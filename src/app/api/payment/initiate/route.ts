@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { NOTCHPAY_BASE, notchpayHeaders } from '@/lib/notchpay';
+import { resolveReferral } from '@/lib/referral';
 
 // Service-role client: the anon key can INSERT orders but RLS blocks UPDATEs,
 // which silently dropped payment_reference (and the failure flag) before.
@@ -11,7 +12,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { customer, cart, total } = await req.json();
+    const { customer, cart, total, code } = await req.json();
 
     if (!customer?.email || !customer?.name) {
       return NextResponse.json({ error: 'Nom et email requis' }, { status: 400 });
@@ -19,6 +20,11 @@ export async function POST(req: NextRequest) {
     if (!Array.isArray(cart) || cart.length === 0) {
       return NextResponse.json({ error: 'Panier vide' }, { status: 400 });
     }
+
+    // Resolve the referral code SERVER-SIDE — never trust a discount computed by
+    // the browser. During an active promo the code is ignored entirely.
+    const referral = await resolveReferral(code || '', Number(total) || 0);
+    const amountToPay = referral.amountToPay;
 
     // Upsert customer
     const { data: existing } = await supabase
@@ -40,10 +46,18 @@ export async function POST(req: NextRequest) {
       customerId = newC.id;
     }
 
-    // Create order
+    // Create order — total_amount is what the customer actually pays (after any
+    // referral discount). The discount and ambassador commission are recorded too.
     const { data: order, error: oe } = await supabase
       .from('orders')
-      .insert({ customer_id: customerId, total_amount: total, status: 'pending' })
+      .insert({
+        customer_id: customerId,
+        total_amount: amountToPay,
+        status: 'pending',
+        code_ambassadeur: referral.ambassadeur?.code ?? null,
+        remise_montant: referral.remiseMontant,
+        commission_montant: referral.commissionMontant,
+      })
       .select('id')
       .single();
     if (oe || !order) return NextResponse.json({ error: 'Erreur création commande' }, { status: 500 });
@@ -67,7 +81,7 @@ export async function POST(req: NextRequest) {
     // hosted checkout (authorization_url), which handles card + mobile money,
     // OTP, and 3-D Secure itself. Amount is in XAF (no minor unit — 2500 = 2500 FCFA).
     const payload: Record<string, unknown> = {
-      amount: total,
+      amount: amountToPay,
       currency: 'XAF',
       email: customer.email,
       name: customer.name,
@@ -106,7 +120,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       order_id: order.id,
-      total,
+      total: amountToPay,
       payment_url: authUrl,
     });
   } catch (error) {

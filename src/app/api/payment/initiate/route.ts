@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getSebpayCountry } from '@/lib/sebpay';
+import { NOTCHPAY_BASE, notchpayHeaders } from '@/lib/notchpay';
 
 export async function POST(req: NextRequest) {
   try {
-    const { customer, cart, total, country, operator, otp_code } = await req.json();
+    const { customer, cart, total } = await req.json();
 
-    // Validate country + operator
-    const countryData = getSebpayCountry(country || 'CM');
-    if (!countryData) {
-      return NextResponse.json({ error: 'Pays non supporté' }, { status: 400 });
+    if (!customer?.email || !customer?.name) {
+      return NextResponse.json({ error: 'Nom et email requis' }, { status: 400 });
     }
-    const operatorData = countryData.operators.find(o => o.code === operator);
-    if (!operatorData) {
-      return NextResponse.json({ error: 'Opérateur non supporté pour ce pays' }, { status: 400 });
-    }
-    if (operatorData.otp && !otp_code) {
-      return NextResponse.json({ error: 'Code OTP requis pour cet opérateur' }, { status: 400 });
+    if (!Array.isArray(cart) || cart.length === 0) {
+      return NextResponse.json({ error: 'Panier vide' }, { status: 400 });
     }
 
     // Upsert customer
@@ -47,81 +41,67 @@ export async function POST(req: NextRequest) {
       .single();
     if (oe || !order) return NextResponse.json({ error: 'Erreur création commande' }, { status: 500 });
 
-    // Format phone: strip spaces and +, prepend country prefix if missing
-    let phone = customer.phone.replace(/\s+/g, '').replace(/^\+/, '');
-    if (!phone.startsWith(countryData.prefix)) phone = countryData.prefix + phone;
+    // Order items (fire alongside the NotchPay call — both only need order.id)
+    const itemsInsert = supabase.from('order_items').insert(
+      cart.map((item: { id: string; name: string; price: number; duration: string; quantity: number }) => ({
+        order_id: order.id,
+        product_id: item.id,
+        product_name: item.name,
+        price: item.price,
+        duration: item.duration,
+        quantity: item.quantity,
+      }))
+    );
 
-    // Call SebPay API
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const phone = customer.phone ? String(customer.phone).replace(/\s+/g, '') : undefined;
+
+    // Initialize a NotchPay payment. The customer is then redirected to the
+    // hosted checkout (authorization_url), which handles card + mobile money,
+    // OTP, and 3-D Secure itself. Amount is in XAF (no minor unit — 2500 = 2500 FCFA).
     const payload: Record<string, unknown> = {
       amount: total,
-      currency: countryData.currency,
-      phone,
-      operator: operatorData.code,
-      country: countryData.code,
-      external_reference: order.id,
-      callback_url: `${siteUrl}/api/payment/webhook`,
+      currency: 'XAF',
+      email: customer.email,
+      name: customer.name,
+      reference: order.id,
+      callback: `${siteUrl}/commande/${order.id}`,
+      description: cart.map((i: { name: string }) => i.name).join(', ').slice(0, 140),
     };
-    if (otp_code) payload.otp_code = otp_code;
+    if (phone) payload.phone = phone;
 
-    // Create order items in parallel with the SebPay call — both only depend on order.id
-    const [sebpayRes] = await Promise.all([
-      fetch('https://newapi.sebpay.bj/api/v1/collections', {
+    const [notchRes] = await Promise.all([
+      fetch(`${NOTCHPAY_BASE}/payments`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Public-Key': process.env.SEBPAY_PUBLIC_KEY!,
-          'X-Secret-Key': process.env.SEBPAY_SECRET_KEY!,
-        },
+        headers: notchpayHeaders(),
         body: JSON.stringify(payload),
       }),
-      supabase.from('order_items').insert(
-        cart.map((item: { id: string; name: string; price: number; duration: string; quantity: number }) => ({
-          order_id: order.id,
-          product_id: item.id,
-          product_name: item.name,
-          price: item.price,
-          duration: item.duration,
-          quantity: item.quantity,
-        }))
-      ),
+      itemsInsert,
     ]);
 
-    const sebpayData = await sebpayRes.json();
+    const notch = await notchRes.json();
+    const authUrl = notch?.authorization_url || notch?.data?.authorization_url;
+    const notchRef = notch?.transaction?.reference || notch?.transaction?.id;
 
-    if (!sebpayData.success) {
-      // Log everything we sent + got back so "failed to initiate collection" is diagnosable.
-      console.error('SebPay initiate failed', {
-        http: sebpayRes.status,
-        response: sebpayData,
-        payload: { ...payload, phone },
-      });
-      // Don't leave an orphan "pending" order the admin will chase forever.
+    if (!notchRes.ok || !authUrl) {
+      console.error('NotchPay initiate failed', { http: notchRes.status, response: notch, payload });
       await supabase.from('orders').update({ status: 'failed' }).eq('id', order.id);
-
-      const raw = String(sebpayData.message || '');
-      const friendly = /initiate collection|not found|invalid|operator/i.test(raw)
-        ? "Le paiement n'a pas pu être lancé. Vérifie ton numéro et l'opérateur choisi, puis réessaie. Si le problème persiste, contacte-nous sur WhatsApp."
-        : raw || 'Le paiement a échoué. Réessaie ou contacte-nous sur WhatsApp.';
-      return NextResponse.json({ error: friendly }, { status: 400 });
+      return NextResponse.json(
+        { error: "Le paiement n'a pas pu être lancé. Réessaie dans un instant, ou contacte-nous sur WhatsApp." },
+        { status: 400 }
+      );
     }
 
-    // Store SebPay transaction id for status checks — fire and forget, not needed to respond to client
-    const transactionId = sebpayData.data?.transaction_id || sebpayData.transaction_id;
-    if (transactionId) {
-      supabase
-        .from('orders')
-        .update({ payment_reference: transactionId })
-        .eq('id', order.id)
-        .then();
+    // Store NotchPay's own reference so we can verify the payment later.
+    if (notchRef) {
+      await supabase.from('orders').update({ payment_reference: notchRef }).eq('id', order.id);
     }
 
     return NextResponse.json({
       order_id: order.id,
       total,
-      payment_url: sebpayData.data?.provider_link || null,
+      payment_url: authUrl,
     });
-
   } catch (error) {
     console.error('Order error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

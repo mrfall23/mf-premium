@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { verifyAndSyncOrder } from '@/lib/sebpay-verify';
+import { verifyAndSyncOrder } from '@/lib/notchpay-verify';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';

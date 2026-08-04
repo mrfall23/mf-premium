@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAndSyncOrder } from '@/lib/sebpay-verify';
+import { verifyAndSyncOrder } from '@/lib/notchpay-verify';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

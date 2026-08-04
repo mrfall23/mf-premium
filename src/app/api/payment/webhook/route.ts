@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createHmac } from 'crypto';
+import { verifyAndSyncOrder } from '@/lib/notchpay-verify';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,20 +10,20 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    // Read the RAW body so signature verification matches exactly what SebPay signed.
-    // (Re-stringifying a parsed object almost never reproduces the original bytes.)
+    // Read the RAW body so signature verification matches exactly what NotchPay
+    // signed. (Re-stringifying a parsed object never reproduces the bytes.)
     const raw = await req.text();
     const signature =
-      req.headers.get('x-sebpay-signature') || req.headers.get('x-signature');
+      req.headers.get('x-notch-signature') || req.headers.get('x-notch-signature'.toUpperCase());
 
-    if (signature) {
-      const expected = createHmac('sha256', process.env.SEBPAY_SECRET_KEY!)
+    if (signature && process.env.NOTCHPAY_HASH_KEY) {
+      const expected = createHmac('sha256', process.env.NOTCHPAY_HASH_KEY)
         .update(raw)
         .digest('hex');
       if (signature !== expected) {
-        // Log but do NOT block: a signature mismatch here has repeatedly hidden
-        // real, already-collected payments. We re-verify with SebPay below anyway.
-        console.warn('SebPay webhook signature mismatch', { signature, expected });
+        // Log but do NOT block — we re-verify with NotchPay below anyway, so a
+        // signature quirk can never hide an already-collected payment.
+        console.warn('NotchPay webhook signature mismatch', { signature, expected });
       }
     }
 
@@ -30,63 +31,46 @@ export async function POST(req: NextRequest) {
     try {
       body = JSON.parse(raw);
     } catch {
-      console.error('SebPay webhook: invalid JSON body', raw);
+      console.error('NotchPay webhook: invalid JSON body', raw);
       return NextResponse.json({ received: true });
     }
 
-    // SebPay nests the transaction under `data` (same shape as the GET endpoint),
-    // but some webhook events send the fields flat. Support both.
-    const payload = (body.data as Record<string, unknown>) || body;
-    const externalReference =
-      (payload.external_reference as string) || (body.external_reference as string);
-    const rawStatus =
-      (payload.status as string) || (body.status as string) || '';
-    const status = rawStatus.toLowerCase();
+    const data = (body.data as Record<string, unknown>) || body;
+    const reference = (data.reference as string) || (data.merchant_reference as string);
 
-    console.log('SebPay webhook received', { externalReference, status });
+    console.log('NotchPay webhook received', { type: body.type, reference, status: data.status });
 
-    if (!externalReference) {
-      return NextResponse.json({ received: true });
+    if (!reference) return NextResponse.json({ received: true });
+
+    // The webhook may carry NotchPay's own reference (trx.…) or our order id
+    // (a UUID). Match on payment_reference first; if the reference is a UUID and
+    // nothing matched, treat it as our order id. (Avoids casting trx.… to uuid.)
+    let orderId: string | undefined;
+
+    const { data: byRef } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('payment_reference', reference)
+      .maybeSingle();
+    orderId = byRef?.id;
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reference);
+    if (!orderId && isUuid) {
+      const { data: byId } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('id', reference)
+        .maybeSingle();
+      orderId = byId?.id;
     }
 
-    // Re-verify against SebPay so a spoofed or malformed webhook can never flip an
-    // order to paid — SebPay's own record is the source of truth.
-    let verifiedStatus = status;
-    try {
-      const res = await fetch(
-        `https://newapi.sebpay.bj/api/v1/collections/${externalReference}`,
-        {
-          headers: {
-            'X-Public-Key': process.env.SEBPAY_PUBLIC_KEY!,
-            'X-Secret-Key': process.env.SEBPAY_SECRET_KEY!,
-          },
-        }
-      );
-      const data = await res.json();
-      if (data?.success && data?.data?.status) {
-        verifiedStatus = String(data.data.status).toLowerCase();
-      }
-    } catch (e) {
-      console.error('SebPay webhook re-verify failed', e);
-    }
-
-    if (verifiedStatus === 'approved' || verifiedStatus === 'success') {
-      await supabaseAdmin
-        .from('orders')
-        .update({ status: 'paid', payment_method: 'mobile_money' })
-        .eq('id', externalReference)
-        .eq('status', 'pending');
-    } else if (verifiedStatus === 'rejected' || verifiedStatus === 'failed') {
-      await supabaseAdmin
-        .from('orders')
-        .update({ status: 'failed' })
-        .eq('id', externalReference)
-        .eq('status', 'pending');
+    if (orderId) {
+      await verifyAndSyncOrder(orderId);
     }
 
     return NextResponse.json({ received: true });
   } catch (e) {
-    console.error('SebPay webhook error', e);
+    console.error('NotchPay webhook error', e);
     return NextResponse.json({ received: true });
   }
 }

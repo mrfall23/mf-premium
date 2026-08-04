@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { NOTCHPAY_BASE, notchpayHeaders } from '@/lib/notchpay';
+
+// Service-role client: the anon key can INSERT orders but RLS blocks UPDATEs,
+// which silently dropped payment_reference (and the failure flag) before.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: NextRequest) {
   try {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAndSyncOrder } from '@/lib/sebpay-verify';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,33 +21,10 @@ export async function GET(req: NextRequest) {
 
   if (!order) return NextResponse.json({ error: 'Commande introuvable' }, { status: 404 });
 
-  // If still pending, check SebPay directly (by external_reference = order id)
+  // If still pending, ask SebPay directly and reconcile the DB.
   if (order.status === 'pending') {
-    try {
-      const res = await fetch(`https://newapi.sebpay.bj/api/v1/collections/${orderId}`, {
-        headers: {
-          'X-Public-Key': process.env.SEBPAY_PUBLIC_KEY!,
-          'X-Secret-Key': process.env.SEBPAY_SECRET_KEY!,
-        },
-      });
-      const data = await res.json();
-      const txStatus = data?.data?.status;
-
-      if (data.success && txStatus === 'approved') {
-        await supabaseAdmin
-          .from('orders')
-          .update({ status: 'paid', payment_method: 'mobile_money' })
-          .eq('id', orderId);
-        return NextResponse.json({ status: 'paid' });
-      }
-
-      if (data.success && txStatus === 'rejected') {
-        await supabaseAdmin.from('orders').update({ status: 'failed' }).eq('id', orderId);
-        return NextResponse.json({ status: 'failed' });
-      }
-    } catch {
-      // If SebPay check fails, just return DB status
-    }
+    const status = await verifyAndSyncOrder(orderId);
+    return NextResponse.json({ status });
   }
 
   return NextResponse.json({ status: order.status });

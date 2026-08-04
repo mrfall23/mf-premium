@@ -90,14 +90,28 @@ export async function POST(req: NextRequest) {
     const sebpayData = await sebpayRes.json();
 
     if (!sebpayData.success) {
-      return NextResponse.json({ error: sebpayData.message || 'Erreur paiement' }, { status: 400 });
+      // Log everything we sent + got back so "failed to initiate collection" is diagnosable.
+      console.error('SebPay initiate failed', {
+        http: sebpayRes.status,
+        response: sebpayData,
+        payload: { ...payload, phone },
+      });
+      // Don't leave an orphan "pending" order the admin will chase forever.
+      await supabase.from('orders').update({ status: 'failed' }).eq('id', order.id);
+
+      const raw = String(sebpayData.message || '');
+      const friendly = /initiate collection|not found|invalid|operator/i.test(raw)
+        ? "Le paiement n'a pas pu être lancé. Vérifie ton numéro et l'opérateur choisi, puis réessaie. Si le problème persiste, contacte-nous sur WhatsApp."
+        : raw || 'Le paiement a échoué. Réessaie ou contacte-nous sur WhatsApp.';
+      return NextResponse.json({ error: friendly }, { status: 400 });
     }
 
     // Store SebPay transaction id for status checks — fire and forget, not needed to respond to client
-    if (sebpayData.data?.transaction_id) {
+    const transactionId = sebpayData.data?.transaction_id || sebpayData.transaction_id;
+    if (transactionId) {
       supabase
         .from('orders')
-        .update({ payment_reference: sebpayData.data.transaction_id })
+        .update({ payment_reference: transactionId })
         .eq('id', order.id)
         .then();
     }

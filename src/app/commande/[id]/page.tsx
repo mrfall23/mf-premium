@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
+import { verifyAndSyncOrder } from '@/lib/sebpay-verify';
 import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -14,7 +17,14 @@ async function getOrder(id: string) {
 
 export default async function CommandePage({ params }: Props) {
   const { id } = await params;
-  const order = await getOrder(id);
+  let order = await getOrder(id);
+
+  // Safety net: if the order is still pending, ask SebPay directly and reconcile.
+  // This confirms payments even when the background webhook never fired.
+  if (order && order.status === 'pending') {
+    await verifyAndSyncOrder(id);
+    order = await getOrder(id);
+  }
 
   if (!order) {
     return (

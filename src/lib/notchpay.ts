@@ -1,4 +1,4 @@
-// NotchPay integration helpers.
+// NotchPay integration helpers. (rev: service-role writes in initiate)
 // Auth: the PUBLIC key goes in the `Authorization` header for standard
 // payment operations (initialize, verify). The PRIVATE key is only needed
 // for money-out (transfers) which we don't do. Webhooks are verified with

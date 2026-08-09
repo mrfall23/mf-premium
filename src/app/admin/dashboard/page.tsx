@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { formatFCFA } from '@/lib/format';
 import { Users, ShoppingBag, TrendingUp, Trash2, Plus, LogOut, CheckCircle, Phone } from 'lucide-react';
 
 interface Stats {
@@ -266,7 +267,7 @@ export default function AdminDashboard() {
             {[
               { icon: <Users className="w-8 h-8 text-blue-400" />, label: 'Clients', value: stats.totalCustomers },
               { icon: <ShoppingBag className="w-8 h-8 text-green-400" />, label: 'Commandes', value: stats.totalOrders },
-              { icon: <TrendingUp className="w-8 h-8 text-yellow-400" />, label: "Chiffre d'affaires", value: `${stats.totalRevenue.toLocaleString()} FCFA` },
+              { icon: <TrendingUp className="w-8 h-8 text-yellow-400" />, label: "Chiffre d'affaires", value: `${formatFCFA(stats.totalRevenue)} FCFA` },
             ].map((stat, i) => (
               <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 {stat.icon}
@@ -298,7 +299,7 @@ export default function AdminDashboard() {
                       <p className="font-medium">{order.customers?.name}</p>
                       <p className="text-gray-400 text-xs">{order.customers?.email}</p>
                     </td>
-                    <td className="py-3 pr-4 font-bold">{order.total_amount?.toLocaleString()} FCFA</td>
+                    <td className="py-3 pr-4 font-bold">{formatFCFA(order.total_amount)} FCFA</td>
                     <td className="py-3 pr-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[order.status] || 'bg-gray-500/20 text-gray-400'}`}>
                         {order.status}
@@ -373,7 +374,7 @@ export default function AdminDashboard() {
                 <div key={product.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
                   <div>
                     <p className="font-semibold">{product.name}</p>
-                    <p className="text-blue-400 font-bold">{product.price.toLocaleString()} FCFA</p>
+                    <p className="text-blue-400 font-bold">{formatFCFA(product.price)} FCFA</p>
                     <p className="text-gray-400 text-sm">{product.duration}</p>
                   </div>
                   <button onClick={() => handleDeleteProduct(product.id)} className="text-red-400 hover:text-red-300 p-2 transition-colors">
@@ -507,8 +508,8 @@ export default function AdminDashboard() {
                       <td className="py-3 pr-4">{a.remise_pct}%</td>
                       <td className="py-3 pr-4">{a.commission_pct}%</td>
                       <td className="py-3 pr-4">{a.ventes}</td>
-                      <td className="py-3 pr-4">{a.total_genere.toLocaleString()} FCFA</td>
-                      <td className="py-3 pr-4 font-bold text-yellow-400">{a.commission_due.toLocaleString()} FCFA</td>
+                      <td className="py-3 pr-4">{formatFCFA(a.total_genere)} FCFA</td>
+                      <td className="py-3 pr-4 font-bold text-yellow-400">{formatFCFA(a.commission_due)} FCFA</td>
                       <td className="py-3">
                         <div className="flex items-center gap-2">
                           <button onClick={() => startEditAmb(a)} className="bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-lg px-2 py-1 text-xs transition-colors">Modifier</button>

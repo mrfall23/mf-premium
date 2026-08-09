@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Product } from '@/types';
 import { addToCart } from '@/lib/store';
 import { DURATION_NOTES } from '@/lib/catalog';
+import { formatFCFA } from '@/lib/format';
 import Link from 'next/link';
 
 interface Props {
@@ -70,7 +71,7 @@ function OfferCard({ product, image, onAdded }: { product: Product; image?: stri
         fontFamily: 'var(--font-orbitron)', fontWeight: 900,
         fontSize: 'clamp(20px,3vw,24px)', color: '#a855f7',
       }}>
-        {product.price.toLocaleString()} <span style={{ fontSize: 13 }}>FCFA</span>
+        {formatFCFA(product.price)} <span style={{ fontSize: 13 }}>FCFA</span>
       </div>
 
       <button

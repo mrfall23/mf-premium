@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { formatFCFA } from '@/lib/format';
 import { verifyAndSyncOrder } from '@/lib/notchpay-verify';
 import Link from 'next/link';
 
@@ -45,7 +46,7 @@ export default async function CommandePage({ params }: Props) {
 
   const ref = '#' + id.slice(0, 8).toUpperCase();
   const items: { product_name: string; duration: string; price: number; quantity: number }[] = order.order_items || [];
-  const itemLines = items.map(item => `  • ${item.product_name} — ${item.duration} — ${item.price.toLocaleString()} FCFA`).join('\n');
+  const itemLines = items.map(item => `  • ${item.product_name} — ${item.duration} — ${formatFCFA(item.price)} FCFA`).join('\n');
   const statusLine = isPaid
     ? '✅ Paiement confirmé — merci de me communiquer mes accès.'
     : isPending
@@ -65,7 +66,7 @@ export default async function CommandePage({ params }: Props) {
 🎬 Abonnement(s) commandé(s)
 ${itemLines}
 
-💰 Total : ${order.total_amount?.toLocaleString()} FCFA
+💰 Total : ${formatFCFA(order.total_amount)} FCFA
 
 ${statusLine}`
   );
@@ -124,7 +125,7 @@ ${statusLine}`
                     <div style={{ fontSize: 12, color: '#7c6d94' }}>{item.duration}</div>
                   </div>
                   <div style={{ fontFamily: 'var(--font-orbitron)', fontSize: 14, fontWeight: 700, color: '#a855f7' }}>
-                    {item.price.toLocaleString()} FCFA
+                    {formatFCFA(item.price)} FCFA
                   </div>
                 </div>
               ))}
@@ -135,7 +136,7 @@ ${statusLine}`
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-orbitron)', fontSize: 14, color: '#9d8fb5', letterSpacing: 1 }}>TOTAL PAYÉ</span>
             <span style={{ fontFamily: 'var(--font-orbitron)', fontSize: 24, fontWeight: 900, color: isPaid ? '#4ade80' : '#a855f7' }}>
-              {order.total_amount?.toLocaleString()} FCFA
+              {formatFCFA(order.total_amount)} FCFA
             </span>
           </div>
         </div>

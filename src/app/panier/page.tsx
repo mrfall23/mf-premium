@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { CartItem, Customer } from '@/types';
 import { getCart, removeFromCart, clearCart, getCartTotal } from '@/lib/store';
+import { formatFCFA } from '@/lib/format';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -129,7 +130,7 @@ export default function PanierPage() {
                     <div style={{ fontSize: 12, color: '#7c6d94', marginTop: 2 }}>{item.duration}</div>
                   </div>
                   <div style={{ fontFamily: 'var(--font-orbitron)', fontWeight: 900, fontSize: 18, color: '#a855f7', marginRight: 8 }}>
-                    {item.price.toLocaleString()} FCFA
+                    {formatFCFA(item.price)} FCFA
                   </div>
                   <button onClick={() => handleRemove(item.id)} style={{
                     cursor: 'pointer', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
@@ -143,7 +144,7 @@ export default function PanierPage() {
             <div style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: 16, padding: 'clamp(20px,4vw,28px)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
                 <span style={{ fontFamily: 'var(--font-orbitron)', fontSize: 14, color: '#9d8fb5', letterSpacing: 1 }}>TOTAL</span>
-                <span style={{ fontFamily: 'var(--font-orbitron)', fontSize: 28, fontWeight: 900, color: '#a855f7' }}>{cartTotal.toLocaleString()} FCFA</span>
+                <span style={{ fontFamily: 'var(--font-orbitron)', fontSize: 28, fontWeight: 900, color: '#a855f7' }}>{formatFCFA(cartTotal)} FCFA</span>
               </div>
 
               {/* Infos client */}
@@ -188,7 +189,7 @@ export default function PanierPage() {
                 {codeInfo && (
                   <p style={{ fontSize: 12, marginTop: 8, color: codeInfo.valid ? '#4ade80' : '#f0a35e' }}>
                     {codeInfo.valid
-                      ? `✅ Code ${codeInfo.nom} appliqué : −${codeInfo.remise_pct}% (−${(codeInfo.remise_montant || 0).toLocaleString()} FCFA)`
+                      ? `✅ Code ${codeInfo.nom} appliqué : −${codeInfo.remise_pct}% (−${formatFCFA(codeInfo.remise_montant || 0)} FCFA)`
                       : `ℹ️ ${codeInfo.message || 'Code invalide.'}`}
                   </p>
                 )}
@@ -198,13 +199,13 @@ export default function PanierPage() {
               {remise > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, paddingTop: 16, borderTop: '1px solid rgba(168,85,247,0.15)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9d8fb5' }}>
-                    <span>Sous-total</span><span>{cartTotal.toLocaleString()} FCFA</span>
+                    <span>Sous-total</span><span>{formatFCFA(cartTotal)} FCFA</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4ade80' }}>
-                    <span>Remise ({codeInfo?.nom})</span><span>−{remise.toLocaleString()} FCFA</span>
+                    <span>Remise ({codeInfo?.nom})</span><span>−{formatFCFA(remise)} FCFA</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-orbitron)', fontSize: 16, fontWeight: 900, color: '#fff', marginTop: 4 }}>
-                    <span>À PAYER</span><span style={{ color: '#a855f7' }}>{totalToPay.toLocaleString()} FCFA</span>
+                    <span>À PAYER</span><span style={{ color: '#a855f7' }}>{formatFCFA(totalToPay)} FCFA</span>
                   </div>
                 </div>
               )}
@@ -221,7 +222,7 @@ export default function PanierPage() {
               }}>
                 {loading
                   ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Redirection vers le paiement...</>
-                  : `Payer ${totalToPay.toLocaleString()} FCFA →`}
+                  : `Payer ${formatFCFA(totalToPay)} FCFA →`}
               </button>
 
               <p style={{ textAlign: 'center', fontSize: 11, color: '#5a4e6e', marginTop: 12 }}>

@@ -1,5 +1,6 @@
 'use client';
 import { Product } from '@/types';
+import { formatFCFA } from '@/lib/format';
 import { addToCart } from '@/lib/store';
 import { useState } from 'react';
 
@@ -65,7 +66,7 @@ function PlanRow({ product }: { product: Product }) {
         <div style={{
           fontFamily: 'var(--font-orbitron)', fontWeight: 900,
           fontSize: 18, color: '#a855f7', whiteSpace: 'nowrap',
-        }}>{product.price.toLocaleString()} FCFA</div>
+        }}>{formatFCFA(product.price)} FCFA</div>
         <button
           onClick={handleAdd}
           style={{

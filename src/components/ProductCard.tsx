@@ -1,5 +1,6 @@
 'use client';
 import { Product } from '@/types';
+import { formatFCFA } from '@/lib/format';
 import { ShoppingCart, Check, Clock } from 'lucide-react';
 import { addToCart } from '@/lib/store';
 import { useState } from 'react';
@@ -52,7 +53,7 @@ export default function ProductCard({ product }: Props) {
 
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-2xl font-bold text-white">{product.price.toLocaleString()}</span>
+            <span className="text-2xl font-bold text-white">{formatFCFA(product.price)}</span>
             <span className="text-gray-400 text-sm ml-1">FCFA</span>
           </div>
           <button

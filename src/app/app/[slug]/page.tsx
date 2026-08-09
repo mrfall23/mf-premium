@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/types';
+import { formatFCFA } from '@/lib/format';
 import { getServiceMeta, slugify, DURATION_ORDER } from '@/lib/catalog';
 import { getProductHeroImage, getOfferImage } from '@/lib/catalog-images';
 import OfferList from '@/components/OfferList';
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = variants[0].name;
   const minPrice = Math.min(...variants.map(v => v.price));
   return {
-    title: `${name} à partir de ${minPrice.toLocaleString()} FCFA — MF Premium`,
+    title: `${name} à partir de ${formatFCFA(minPrice)} FCFA — MF Premium`,
     description: variants[0].description,
   };
 }

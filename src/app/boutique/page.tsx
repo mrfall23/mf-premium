@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/types';
+import { formatFCFA } from '@/lib/format';
 import { getServiceMeta, slugify } from '@/lib/catalog';
 import Link from 'next/link';
 
@@ -82,7 +83,7 @@ export default async function BoutiquePage() {
                       <span style={{
                         fontFamily: 'var(--font-orbitron)', fontWeight: 900,
                         fontSize: 16, color: '#a855f7',
-                      }}>{minPrice.toLocaleString()} FCFA</span>
+                      }}>{formatFCFA(minPrice)} FCFA</span>
                     </div>
 
                     <span className="btn-purple" style={{

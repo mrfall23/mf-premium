@@ -27,9 +27,11 @@ export async function verifyAndSyncOrder(orderId: string): Promise<OrderStatus> 
     if (!order) return 'pending';
     if (order.status !== 'pending') return order.status as OrderStatus;
 
-    // Verify with NotchPay by its own transaction reference (stored at init).
-    // Fall back to our order id in case it was passed as the merchant reference.
-    const ref = order.payment_reference || orderId;
+    // Pas de référence NotchPay = commande à paiement direct (mobile money vers
+    // le vendeur). On ne vérifie rien auprès de NotchPay : le vendeur confirme
+    // manuellement depuis l'admin. Ne surtout pas la marquer échouée.
+    const ref = order.payment_reference;
+    if (!ref) return 'pending';
 
     const res = await fetch(`${NOTCHPAY_BASE}/payments/${encodeURIComponent(ref)}`, {
       headers: notchpayHeaders(),

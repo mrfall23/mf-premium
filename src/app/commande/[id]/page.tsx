@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { formatFCFA } from '@/lib/format';
+import { DIRECT_PAYMENT_METHODS } from '@/lib/direct-payment';
 import { verifyAndSyncOrder } from '@/lib/notchpay-verify';
 import Link from 'next/link';
 
@@ -94,6 +95,27 @@ ${statusLine}`
               : 'Le paiement n\'a pas abouti. Contacte-nous si nécessaire.'}
           </p>
         </div>
+
+        {/* Instructions de paiement direct (commande en attente) */}
+        {isPending && order.payment_method === 'direct' && (
+          <div style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: 16, padding: '20px 24px', marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#c084fc', marginBottom: 12 }}>💳 Comment payer</div>
+            <p style={{ fontSize: 13, color: '#9d8fb5', lineHeight: 1.6, marginBottom: 14 }}>
+              Envoie <strong style={{ color: '#fff' }}>{formatFCFA(order.total_amount)} FCFA</strong> à l&apos;un de ces numéros, puis envoie ta preuve sur WhatsApp :
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {DIRECT_PAYMENT_METHODS.map(m => (
+                <div key={m.number} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.03)', border: `1px solid ${m.color}55`, borderRadius: 12, padding: '12px 14px' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: m.color, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 12, color: '#9d8fb5' }}>{m.operator} — {m.name}</div>
+                    <div style={{ fontFamily: 'var(--font-orbitron)', fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: 1 }}>{m.number}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Order card */}
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: 20, padding: 'clamp(20px,4vw,28px)', marginBottom: 20 }}>

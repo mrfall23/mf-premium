@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { CartItem, Customer } from '@/types';
 import { getCart, removeFromCart, clearCart, getCartTotal } from '@/lib/store';
 import { formatFCFA } from '@/lib/format';
+import { DIRECT_PAYMENT_METHODS } from '@/lib/direct-payment';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -34,6 +35,7 @@ export default function PanierPage() {
   const [code, setCode] = useState('');
   const [codeChecking, setCodeChecking] = useState(false);
   const [codeInfo, setCodeInfo] = useState<{ valid: boolean; nom?: string; remise_pct?: number; remise_montant?: number; new_total?: number; message?: string } | null>(null);
+  const [placed, setPlaced] = useState<{ orderId: string; total: number; waMsg: string } | null>(null);
 
   useEffect(() => { setCart(getCart()); }, []);
 
@@ -73,28 +75,82 @@ export default function PanierPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/payment/initiate', {
+      const res = await fetch('/api/payment/direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customer, cart, total: cartTotal, code: codeInfo?.valid ? code : undefined }),
       });
       const data = await res.json();
-      if (data.error || !data.payment_url) {
-        setError(data.error || "Le paiement n'a pas pu être lancé. Réessaie.");
+      if (data.error || !data.order_id) {
+        setError(data.error || "La commande n'a pas pu être enregistrée. Réessaie.");
         return;
       }
 
+      // Message WhatsApp pré-rempli (construit avant de vider le panier)
+      const ref = '#' + data.order_id.slice(0, 8).toUpperCase();
+      const items = cart.map(i => `• ${i.name} (${i.duration})`).join('\n');
+      const waMsg = encodeURIComponent(
+        `Bonjour MF Premium 👋\nJe viens de passer la commande ${ref} :\n${items}\n\n💰 Montant : ${formatFCFA(data.total)} FCFA\nJe paie par Orange/MTN — voici ma preuve de paiement :`
+      );
+
+      setPlaced({ orderId: data.order_id, total: data.total, waMsg });
       clearCart();
       window.dispatchEvent(new Event('cart-updated'));
-
-      // Redirect to NotchPay hosted checkout (card + mobile money + PayPal).
-      window.location.href = data.payment_url;
     } catch {
       setError('Erreur de connexion. Vérifiez votre internet.');
     } finally {
       setLoading(false);
     }
   };
+
+  // ── Écran instructions de paiement direct (après commande) ──
+  if (placed) {
+    const ref = '#' + placed.orderId.slice(0, 8).toUpperCase();
+    const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+    return (
+      <div style={{ paddingTop: 64, minHeight: '100vh' }}>
+        <div className="animate-fadeInUp" style={{ maxWidth: 560, margin: '0 auto', padding: 'clamp(32px,6vw,56px) clamp(16px,4vw,40px) 80px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <div style={{ fontSize: 56, marginBottom: 16 }}>📲</div>
+            <h1 style={{ fontFamily: 'var(--font-orbitron)', fontSize: 'clamp(20px,4vw,26px)', fontWeight: 900, color: '#fff', letterSpacing: 2, marginBottom: 8 }}>DERNIÈRE ÉTAPE : LE PAIEMENT</h1>
+            <p style={{ color: '#9d8fb5', fontSize: 14 }}>Envoie le montant à l&apos;un des numéros ci-dessous, puis confirme sur WhatsApp.</p>
+          </div>
+
+          <div style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: 16, padding: '20px 24px', marginBottom: 20, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: '#7c6d94', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Montant à envoyer</div>
+            <div style={{ fontFamily: 'var(--font-orbitron)', fontSize: 34, fontWeight: 900, color: '#a855f7' }}>{formatFCFA(placed.total)} FCFA</div>
+            <div style={{ fontSize: 13, color: '#7c6d94', marginTop: 8 }}>Référence : <strong style={{ color: '#a855f7' }}>{ref}</strong></div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            {DIRECT_PAYMENT_METHODS.map(m => (
+              <div key={m.number} style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(255,255,255,0.03)', border: `1px solid ${m.color}55`, borderRadius: 14, padding: '16px 18px' }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', background: m.color, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: '#9d8fb5' }}>{m.operator} — {m.name}</div>
+                  <div style={{ fontFamily: 'var(--font-orbitron)', fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: 1 }}>{m.number}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(168,85,247,0.15)', borderRadius: 14, padding: '16px 20px', marginBottom: 24, fontSize: 13, color: '#9d8fb5', lineHeight: 1.9 }}>
+            <div><strong style={{ color: '#e8e0f7' }}>1.</strong> Envoie <strong style={{ color: '#fff' }}>{formatFCFA(placed.total)} FCFA</strong> à l&apos;un des numéros ci-dessus.</div>
+            <div><strong style={{ color: '#e8e0f7' }}>2.</strong> Clique sur <strong style={{ color: '#25d366' }}>WhatsApp</strong> et envoie ta capture de paiement.</div>
+            <div><strong style={{ color: '#e8e0f7' }}>3.</strong> Tu reçois tes accès dès confirmation ✅</div>
+          </div>
+
+          <a href={`https://wa.me/${waNumber}?text=${placed.waMsg}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 16, background: 'linear-gradient(135deg,#25d366,#128c7e)', borderRadius: 12, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none', letterSpacing: 1 }}>
+            📲 J&apos;AI PAYÉ — ENVOYER MA PREUVE SUR WHATSAPP
+          </a>
+
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#7c6d94', marginTop: 16 }}>
+            Commande <strong style={{ color: '#a855f7' }}>{ref}</strong> enregistrée · <Link href={`/commande/${placed.orderId}`} style={{ color: '#a855f7' }}>voir ma commande</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Cart screen ──
   return (
@@ -221,12 +277,12 @@ export default function PanierPage() {
                 opacity: loading ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
                 {loading
-                  ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Redirection vers le paiement...</>
-                  : `Payer ${formatFCFA(totalToPay)} FCFA →`}
+                  ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Enregistrement...</>
+                  : `Commander · ${formatFCFA(totalToPay)} FCFA →`}
               </button>
 
               <p style={{ textAlign: 'center', fontSize: 11, color: '#5a4e6e', marginTop: 12 }}>
-                🔒 Paiement sécurisé · Mobile Money, Carte Visa/Mastercard & PayPal
+                🔒 Paiement Mobile Money direct · Orange Money &amp; MTN MoMo
               </p>
             </div>
           </>

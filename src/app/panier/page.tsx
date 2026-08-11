@@ -87,10 +87,16 @@ export default function PanierPage() {
       }
 
       // Message WhatsApp pré-rempli (construit avant de vider le panier)
+      // Inclut les infos client saisies au formulaire + le détail de la commande.
       const ref = '#' + data.order_id.slice(0, 8).toUpperCase();
       const items = cart.map(i => `• ${i.name} (${i.duration})`).join('\n');
+      const infoClient = [
+        `👤 Nom : ${customer.name}`,
+        `📧 Email : ${customer.email}`,
+        customer.phone ? `📱 Téléphone : ${customer.phone}` : null,
+      ].filter(Boolean).join('\n');
       const waMsg = encodeURIComponent(
-        `Bonjour MF Premium 👋\nJe viens de passer la commande ${ref} :\n${items}\n\n💰 Montant : ${formatFCFA(data.total)} FCFA\nJe paie par Orange/MTN — voici ma preuve de paiement :`
+        `Bonjour MF Premium 👋\nJe viens de passer la commande ${ref}.\n\n${infoClient}\n\n🛒 Article(s) :\n${items}\n\n💰 Montant : ${formatFCFA(data.total)} FCFA\n\nJe paie par Orange/MTN — voici ma preuve de paiement :`
       );
 
       setPlaced({ orderId: data.order_id, total: data.total, waMsg });

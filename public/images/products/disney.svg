@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" preserveAspectRatio="xMidYMid slice" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="dbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1546e6"/>
+      <stop offset="0.55" stop-color="#0b2599"/>
+      <stop offset="1" stop-color="#050d3a"/>
+    </linearGradient>
+    <radialGradient id="dglow" cx="0.72" cy="0.28" r="0.75">
+      <stop offset="0" stop-color="#3f7bff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3f7bff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1000" height="320" fill="url(#dbg)"/>
+  <rect width="1000" height="320" fill="url(#dglow)"/>
+
+  <!-- étoiles -->
+  <g fill="#ffffff">
+    <circle cx="90" cy="52" r="2.2" opacity="0.85"/>
+    <circle cx="160" cy="110" r="1.5" opacity="0.6"/>
+    <circle cx="250" cy="40" r="1.8" opacity="0.7"/>
+    <circle cx="330" cy="90" r="1.4" opacity="0.5"/>
+    <circle cx="520" cy="46" r="2" opacity="0.8"/>
+    <circle cx="620" cy="120" r="1.5" opacity="0.55"/>
+    <circle cx="700" cy="60" r="2.4" opacity="0.9"/>
+    <circle cx="820" cy="40" r="1.6" opacity="0.6"/>
+    <circle cx="900" cy="100" r="2" opacity="0.75"/>
+    <circle cx="960" cy="180" r="1.5" opacity="0.5"/>
+    <circle cx="440" cy="150" r="1.3" opacity="0.45"/>
+  </g>
+
+  <!-- château (emoji, discret) -->
+  <text x="880" y="235" font-size="230" text-anchor="middle" opacity="0.14">🏰</text>
+
+  <!-- marque -->
+  <text x="70" y="158" fill="#ffffff" font-size="82" font-weight="800" letter-spacing="1">Disney<tspan fill="#66a3ff" dx="4">+</tspan></text>
+
+  <!-- sous-titre -->
+  <text x="74" y="205" fill="#bcd0ff" font-size="21" font-weight="600" letter-spacing="3">DISNEY · MARVEL · STAR WARS · PIXAR</text>
+
+  <!-- badge 4K -->
+  <g transform="translate(74,226)">
+    <rect width="132" height="32" rx="16" fill="#ffffff" opacity="0.14"/>
+    <text x="66" y="21" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle" letter-spacing="2">4K ULTRA HD</text>
+  </g>
+</svg>

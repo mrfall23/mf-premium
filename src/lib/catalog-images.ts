@@ -7,7 +7,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { slugify } from './catalog';
 
-const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
+const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
 
 function findPublicImage(relBase: string): string | null {
   for (const ext of IMAGE_EXTS) {

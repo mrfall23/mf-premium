@@ -14,6 +14,7 @@ const iconFor = (name: string) => {
   if (name.includes('Apple')) return '🍎';
   if (name.includes('Crunchyroll')) return '⛩️';
   if (name.includes('Canva')) return '🎨';
+  if (name.includes('Disney')) return '🏰';
   return '⭐';
 };
 
@@ -24,6 +25,7 @@ const bgFor = (name: string) => {
   if (name.includes('Apple')) return 'linear-gradient(135deg,#fc3c44,#a01c22)';
   if (name.includes('Crunchyroll')) return 'linear-gradient(135deg,#f47521,#a04c10)';
   if (name.includes('Canva')) return 'linear-gradient(135deg,#7d2ae8,#4a1589)';
+  if (name.includes('Disney')) return 'linear-gradient(135deg,#0e3fd6,#081a5e)';
   return 'linear-gradient(135deg,#a855f7,#7c3aed)';
 };
 

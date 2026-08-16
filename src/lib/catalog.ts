@@ -15,6 +15,8 @@ const SERVICE_META: Record<string, ServiceMeta> = {
   Crunchyroll: { icon: '⛩️', bg: 'linear-gradient(135deg,#f47521,#a04c10)', glow: 'rgba(244,117,33,0.4)', tagline: 'Anime premium sans limite' },
   'Canva Pro': { icon: '🎨', bg: 'linear-gradient(135deg,#7d2ae8,#4a1589)', glow: 'rgba(125,42,232,0.4)', tagline: 'Design professionnel' },
   'Apple Music': { icon: '🍎', bg: 'linear-gradient(135deg,#fc3c44,#a01c22)', glow: 'rgba(252,60,68,0.4)', tagline: '100M+ titres & exclusivités' },
+  'Disney+': { icon: '🏰', bg: 'linear-gradient(135deg,#0e3fd6,#081a5e)', glow: 'rgba(14,63,214,0.4)', tagline: 'Disney, Marvel, Star Wars & Pixar' },
+  Disney: { icon: '🏰', bg: 'linear-gradient(135deg,#0e3fd6,#081a5e)', glow: 'rgba(14,63,214,0.4)', tagline: 'Disney, Marvel, Star Wars & Pixar' },
   ChatGPT: { icon: '🤖', bg: 'linear-gradient(135deg,#10a37f,#0a6e56)', glow: 'rgba(16,163,127,0.4)', tagline: 'IA la plus avancée au monde' },
   'CapCut Pro': { icon: '✂️', bg: 'linear-gradient(135deg,#00e0d5,#008a83)', glow: 'rgba(0,224,213,0.4)', tagline: 'Montage vidéo professionnel' },
 };

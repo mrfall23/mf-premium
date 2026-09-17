@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { addToCart } from '@/lib/store';
 import { getServiceMeta } from '@/lib/catalog';
 import { formatFCFA } from '@/lib/format';
-import { COMBOS, COMBO_MONTHS, comboDurationLabel, Combo } from '@/lib/combos';
+import { ComboDisplay } from '@/lib/combos';
 import Link from 'next/link';
 
 interface Props {
+  combos: ComboDisplay[];
   images?: Record<string, string | null>;
 }
 
@@ -38,26 +39,16 @@ function ServicesVisual({ services }: { services: string[] }) {
   );
 }
 
-function ComboCard({ combo, image, onAdded }: { combo: Combo; image?: string | null; onAdded: () => void }) {
-  const [months, setMonths] = useState(1);
+function ComboCard({ combo, image, onAdded }: { combo: ComboDisplay; image?: string | null; onAdded: () => void }) {
+  const [idx, setIdx] = useState(0);
   const [added, setAdded] = useState(false);
 
-  const total = combo.monthlyPrice * months;
-  const duration = comboDurationLabel(months);
+  const option = combo.options[idx] ?? combo.options[0];
 
   const handleOrder = () => {
-    // Réutilise le système de commande existant : on ajoute au panier un article
-    // au même format que les produits ({id, name, price, duration, quantity}).
-    addToCart({
-      id: `combo-${combo.slug}-${months}m`,
-      name: `Combo ${combo.name} — ${combo.services.join(' + ')}`,
-      description: `${combo.services.join(' + ')} — ${duration}`,
-      price: total,
-      duration,
-      image_url: '',
-      category: 'combo',
-      is_active: true,
-    });
+    // Réutilise le système de commande existant : on ajoute au panier l'article
+    // de la durée choisie (produit réel Supabase si disponible).
+    addToCart(option.cartItem);
     window.dispatchEvent(new Event('cart-updated'));
     setAdded(true);
     onAdded();
@@ -107,13 +98,13 @@ function ComboCard({ combo, image, onAdded }: { combo: Combo; image?: string | n
           fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: '#7c6d94',
           textTransform: 'uppercase', marginBottom: 8,
         }}>Durée</div>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COMBO_MONTHS.length}, 1fr)`, gap: 8 }}>
-          {COMBO_MONTHS.map((m) => {
-            const active = months === m;
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${combo.options.length}, 1fr)`, gap: 8 }}>
+          {combo.options.map((o, i) => {
+            const active = i === idx;
             return (
               <button
-                key={m}
-                onClick={() => setMonths(m)}
+                key={o.months}
+                onClick={() => setIdx(i)}
                 style={{
                   cursor: 'pointer', padding: '10px 6px', borderRadius: 10,
                   fontFamily: 'var(--font-orbitron)', fontWeight: 700, fontSize: 12,
@@ -122,19 +113,19 @@ function ComboCard({ combo, image, onAdded }: { combo: Combo; image?: string | n
                   border: active ? '2px solid #a855f7' : '2px solid rgba(255,255,255,0.08)',
                   color: active ? '#c084fc' : '#9d8fb5',
                 }}
-              >{m} mois</button>
+              >{o.months} mois</button>
             );
           })}
         </div>
       </div>
 
-      {/* Prix total calculé */}
+      {/* Prix total */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 2 }}>
         <span style={{
           fontFamily: 'var(--font-orbitron)', fontWeight: 900,
           fontSize: 'clamp(20px,3vw,24px)', color: '#a855f7',
-        }}>{formatFCFA(total)} <span style={{ fontSize: 13 }}>FCFA</span></span>
-        <span style={{ fontSize: 12, color: '#7c6d94' }}>/ {months} mois</span>
+        }}>{formatFCFA(option.price)} <span style={{ fontSize: 13 }}>FCFA</span></span>
+        <span style={{ fontSize: 12, color: '#7c6d94' }}>/ {option.months} mois</span>
       </div>
 
       {/* Bouton commande — même système que les produits */}
@@ -156,7 +147,7 @@ function ComboCard({ combo, image, onAdded }: { combo: Combo; image?: string | n
   );
 }
 
-export default function CombosList({ images }: Props) {
+export default function CombosList({ combos, images }: Props) {
   const [hasAdded, setHasAdded] = useState(false);
 
   return (
@@ -166,7 +157,7 @@ export default function CombosList({ images }: Props) {
         gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,300px),1fr))',
         gap: 24, alignItems: 'stretch',
       }}>
-        {COMBOS.map((c) => (
+        {combos.map((c) => (
           <ComboCard key={c.slug} combo={c} image={images?.[c.slug]} onAdded={() => setHasAdded(true)} />
         ))}
       </div>

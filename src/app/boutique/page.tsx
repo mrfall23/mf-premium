@@ -19,7 +19,10 @@ async function getProducts(): Promise<Product[]> {
 }
 
 export default async function BoutiquePage() {
-  const products = await getProducts();
+  // Les combos sont des produits (category='combo') présentés sur la page /combos,
+  // on les exclut du catalogue classique. Filtre JS pour rester sûr même si un
+  // produit a une catégorie nulle (contrairement à un .neq() côté requête).
+  const products = (await getProducts()).filter((p) => p.category !== 'combo');
 
   // Un seul groupe par nom de service, avec le prix minimum
   const grouped: Record<string, Product[]> = {};

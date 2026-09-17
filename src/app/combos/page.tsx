@@ -1,6 +1,9 @@
 import CombosList from '@/components/CombosList';
-import { COMBOS } from '@/lib/combos';
+import { COMBOS, COMBO_MONTHS, comboDurationLabel, ComboDisplay, ComboOption } from '@/lib/combos';
 import { getComboImage } from '@/lib/catalog-images';
+import { supabase } from '@/lib/supabase';
+import { slugify } from '@/lib/catalog';
+import { Product } from '@/types';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,8 +11,61 @@ export const metadata: Metadata = {
   description: 'Nos formules combinant plusieurs abonnements Premium (Netflix, Spotify, Amazon Prime, Crunchyroll, Apple Music) au meilleur prix.',
 };
 
-export default function CombosPage() {
-  // Résolution des images côté serveur (même méthode que les produits).
+// Toujours refléter l'état de la base (les combos apparaissent dès le SQL exécuté,
+// sans attendre un redéploiement).
+export const dynamic = 'force-dynamic';
+
+// Combos vendables enregistrés en base (script supabase-combos.sql).
+async function getComboProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('is_active', true)
+    .eq('category', 'combo');
+  if (error) {
+    console.error('Erreur chargement combos:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export default async function CombosPage() {
+  const dbProducts = await getComboProducts();
+
+  // Pour chaque combo (métadonnées visuelles), on construit ses durées : on
+  // utilise le produit réel Supabase s'il existe (id réel → order_items propre),
+  // sinon un article de repli au même format (la page marche même sans le SQL).
+  const combos: ComboDisplay[] = COMBOS.map((c) => {
+    const variants = dbProducts.filter((p) => slugify(p.name) === c.slug);
+
+    const options: ComboOption[] = COMBO_MONTHS.map((m) => {
+      const label = comboDurationLabel(m);
+      const dbVariant = variants.find((v) => v.duration === label);
+
+      if (dbVariant) {
+        return { months: m, price: dbVariant.price, cartItem: dbVariant };
+      }
+
+      const price = c.monthlyPrice * m;
+      return {
+        months: m,
+        price,
+        cartItem: {
+          id: `combo-${c.slug}-${m}m`,
+          name: `Combo ${c.name} — ${c.services.join(' + ')}`,
+          description: `${c.services.join(' + ')} — ${label}`,
+          price,
+          duration: label,
+          image_url: '',
+          category: 'combo',
+          is_active: true,
+        } as Product,
+      };
+    });
+
+    return { slug: c.slug, name: c.name, services: c.services, options };
+  });
+
   const images: Record<string, string | null> = {};
   for (const c of COMBOS) images[c.slug] = getComboImage(c.slug);
 
@@ -25,7 +81,7 @@ export default function CombosPage() {
           Combine plusieurs abonnements Premium en une seule formule et paie moins cher. Choisis ta durée, on s&apos;occupe du reste.
         </p>
 
-        <CombosList images={images} />
+        <CombosList combos={combos} images={images} />
       </div>
     </div>
   );

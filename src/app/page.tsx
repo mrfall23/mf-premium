@@ -17,6 +17,40 @@ const features = [
   { icon: '💎', title: 'QUALITÉ PREMIUM', desc: 'Comptes vérifiés, accès complet, support réactif.' },
 ];
 
+// Avis clients affichés en preuve sociale sur la page d'accueil
+const testimonials = [
+  {
+    name: 'Junior K.', location: 'Douala, Cameroun', flag: '🇨🇲', service: 'Netflix Premium', rating: 5,
+    text: "Compte Netflix reçu en 5 minutes après mon paiement Orange Money. Ça marche nickel sur ma TV et mon téléphone, je recommande à 100%.",
+    color: '#e50914',
+  },
+  {
+    name: 'Awa D.', location: 'Dakar, Sénégal', flag: '🇸🇳', service: 'Spotify Premium', rating: 5,
+    text: "J'avais un peu peur au début mais tout est carré. Spotify Premium livré direct, plus aucune pub. Merci MF Premium !",
+    color: '#1db954',
+  },
+  {
+    name: 'Ange T.', location: 'Abidjan, Côte d\'Ivoire', flag: '🇨🇮', service: 'Amazon Prime', rating: 5,
+    text: "Prix imbattable par rapport à l'abonnement officiel. Paiement Wave super rapide et j'ai eu mon accès en quelques minutes.",
+    color: '#00a8e0',
+  },
+  {
+    name: 'Serge M.', location: 'Yaoundé, Cameroun', flag: '🇨🇲', service: 'Canva Pro', rating: 5,
+    text: "Canva Pro pour mon business à moitié prix. Le support a été très réactif sur WhatsApp quand j'avais une question. Au top.",
+    color: '#7d2ae8',
+  },
+  {
+    name: 'Fatou B.', location: 'Cotonou, Bénin', flag: '🇧🇯', service: 'Crunchyroll', rating: 5,
+    text: "Enfin mes animes sans pub ! Commande toute simple et livraison instantanée. J'en suis déjà à ma 2e commande.",
+    color: '#f47521',
+  },
+  {
+    name: 'Yann N.', location: 'Libreville, Gabon', flag: '🇬🇦', service: 'Apple Music', rating: 5,
+    text: "Service sérieux et rapide. J'ai payé avec Airtel Money et j'ai reçu mon compte tout de suite. Rien à dire.",
+    color: '#fc3c44',
+  },
+];
+
 // Poster wall — gradient blocks simulating movie/series posters
 const posters = [
   'linear-gradient(160deg,#1a1a2e,#e50914)',   // Netflix rouge
@@ -197,6 +231,69 @@ export default function HomePage() {
               <div style={{ fontSize: 13, color: '#7c6d94' }}>{f.desc}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Témoignages clients */}
+      <section style={{ padding: 'clamp(56px,8vw,90px) clamp(16px,5vw,40px)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{
+            display: 'inline-block', background: 'rgba(168,85,247,0.15)',
+            border: '1px solid rgba(168,85,247,0.5)', borderRadius: 999,
+            padding: '6px 18px', fontSize: 11, fontWeight: 600, letterSpacing: 2,
+            color: '#c084fc', textTransform: 'uppercase', marginBottom: 20,
+          }}>⭐ Ils nous font confiance</div>
+          <h2 style={{
+            fontFamily: 'var(--font-orbitron, Orbitron), sans-serif',
+            fontSize: 'clamp(20px,4vw,26px)', fontWeight: 900, color: '#fff',
+            letterSpacing: 2, marginBottom: 10,
+          }}>AVIS DE NOS CLIENTS</h2>
+          <p style={{ fontSize: 14, color: '#7c6d94', maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}>
+            Des centaines de clients satisfaits à travers l'Afrique. Voici ce qu'ils disent.
+          </p>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))',
+          gap: 20, maxWidth: 1100, margin: '0 auto',
+        }}>
+          {testimonials.map((t) => {
+            const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            return (
+              <div key={t.name} className="card-purple" style={{
+                padding: 26, display: 'flex', flexDirection: 'column', gap: 16,
+              }}>
+                {/* Étoiles */}
+                <div style={{ display: 'flex', gap: 2, fontSize: 15 }}>
+                  {Array.from({ length: t.rating }).map((_, i) => (
+                    <span key={i} style={{ color: '#fbbf24' }}>★</span>
+                  ))}
+                </div>
+
+                {/* Texte de l'avis */}
+                <p style={{ fontSize: 14, color: '#c4b8d8', lineHeight: 1.7, flex: 1, fontStyle: 'italic' }}>
+                  « {t.text} »
+                </p>
+
+                {/* Auteur */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 6, borderTop: '1px solid rgba(168,85,247,0.12)' }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                    background: `linear-gradient(135deg, ${t.color}, ${t.color}99)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--font-orbitron)', fontWeight: 900, fontSize: 14, color: '#fff',
+                  }}>{initials}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, color: '#e8e0f7', fontSize: 14 }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: '#7c6d94' }}>
+                      {t.flag} {t.location} · <span style={{ color: '#a855f7' }}>{t.service}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>

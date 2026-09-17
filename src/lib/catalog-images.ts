@@ -25,3 +25,10 @@ export function getProductHeroImage(slug: string): string | null {
 export function getOfferImage(slug: string, duration: string): string | null {
   return findPublicImage(`images/offers/${slug}-${slugify(duration)}`);
 }
+
+// Image principale d'un combo — même méthode que les produits.
+// Convention : public/images/combos/<slug>.jpg → image de la carte combo.
+// Si absente, la page COMBOS affiche le visuel composé des services (repli).
+export function getComboImage(slug: string): string | null {
+  return findPublicImage(`images/combos/${slug}`);
+}

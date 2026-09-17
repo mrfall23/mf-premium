@@ -25,6 +25,7 @@ export default function Navbar() {
   const links = [
     { href: '/', label: 'Accueil' },
     { href: '/boutique', label: 'Boutique' },
+    { href: '/combos', label: 'Combos' },
     { href: '/faq', label: 'FAQ' },
   ];
 

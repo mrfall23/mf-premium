@@ -62,7 +62,7 @@ export default function FaqPage() {
           <h2 style={{
             fontFamily: 'var(--font-orbitron)', fontSize: 16, fontWeight: 700,
             color: '#fff', marginBottom: 20, letterSpacing: 1,
-          }}>BESOIN D'AIDE ?</h2>
+          }}>BESOIN D&apos;AIDE ?</h2>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {[
               { label: '📱 WhatsApp', href: `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}` },

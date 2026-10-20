@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
 
 const services = [
   { name: 'Netflix', desc: 'Films & Séries 4K', icon: '🎬', bg: 'linear-gradient(135deg,#e50914,#8b0000)', glow: 'rgba(229,9,20,0.4)', anim: 'animate-float' },
@@ -31,7 +30,7 @@ const testimonials = [
   },
   {
     name: 'Ange T.', location: 'Abidjan, Côte d\'Ivoire', flag: '🇨🇮', service: 'Amazon Prime', rating: 5,
-    text: "Prix imbattable par rapport à l'abonnement officiel. Paiement Wave super rapide et j'ai eu mon accès en quelques minutes.",
+    text: "Prix imbattable par rapport à l'abonnement officiel. Paiement MTN MoMo super rapide et j'ai eu mon accès en quelques minutes.",
     color: '#00a8e0',
   },
   {
@@ -46,7 +45,7 @@ const testimonials = [
   },
   {
     name: 'Yann N.', location: 'Libreville, Gabon', flag: '🇬🇦', service: 'Apple Music', rating: 5,
-    text: "Service sérieux et rapide. J'ai payé avec Airtel Money et j'ai reçu mon compte tout de suite. Rien à dire.",
+    text: "Service sérieux et rapide. J'ai payé avec Orange Money et j'ai reçu mon compte tout de suite. Rien à dire.",
     color: '#fc3c44',
   },
 ];
@@ -148,7 +147,7 @@ export default function HomePage() {
           background: 'linear-gradient(135deg,#fff 30%,#c084fc 70%,#a855f7 100%)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
-        }}>MF PREMIUM<br />L'ACCÈS ILLIMITÉ</h1>
+        }}>MF PREMIUM<br />L&apos;ACCÈS ILLIMITÉ</h1>
 
         {/* Subtitle */}
         <p className="animate-fadeInUp" style={{
@@ -249,7 +248,7 @@ export default function HomePage() {
             letterSpacing: 2, marginBottom: 10,
           }}>AVIS DE NOS CLIENTS</h2>
           <p style={{ fontSize: 14, color: '#7c6d94', maxWidth: 460, margin: '0 auto', lineHeight: 1.6 }}>
-            Des centaines de clients satisfaits à travers l'Afrique. Voici ce qu'ils disent.
+            Des centaines de clients satisfaits à travers l&apos;Afrique. Voici ce qu&apos;ils disent.
           </p>
         </div>
 

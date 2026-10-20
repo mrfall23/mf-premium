@@ -39,6 +39,9 @@ export default function PanierPage() {
   const [codeInfo, setCodeInfo] = useState<{ valid: boolean; nom?: string; remise_pct?: number; remise_montant?: number; new_total?: number; message?: string } | null>(null);
   const [placed, setPlaced] = useState<{ orderId: string; total: number; waMsg: string } | null>(null);
 
+  // Lecture du localStorage après le montage : l'initialiser dans useState
+  // recréerait l'erreur d'hydratation #418 (rendu serveur = panier vide).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setCart(getCart()); }, []);
 
   const cartTotal = getCartTotal(cart);

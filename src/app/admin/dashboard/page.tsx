@@ -80,14 +80,6 @@ export default function AdminDashboard() {
   const [ambNote, setAmbNote] = useState('');
   const [editingAmb, setEditingAmb] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !localStorage.getItem('mf_admin')) {
-      router.push('/admin/login');
-      return;
-    }
-    loadData();
-  }, []);
-
   const loadData = async () => {
     const [{ count: customersCount }, { count: ordersCount }, { data: revenueData }, { data: ordersData }, { data: productsData }] = await Promise.all([
       supabase.from('customers').select('*', { count: 'exact', head: true }),
@@ -119,6 +111,17 @@ export default function AdminDashboard() {
       setAmbassadeurs(d.ambassadeurs || []);
     } catch { /* table absente ou erreur réseau : on ignore */ }
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('mf_admin')) {
+      router.push('/admin/login');
+      return;
+    }
+    // Chargement unique au montage (les setState de loadData sont asynchrones)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resetAmbForm = () => {
     setAmbForm({ nom: '', code: '', remise_pct: '10', commission_pct: '15' });

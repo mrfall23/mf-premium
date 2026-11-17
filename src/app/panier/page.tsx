@@ -4,6 +4,7 @@ import { CartItem, Customer } from '@/types';
 import { getCart, removeFromCart, clearCart, getCartTotal } from '@/lib/store';
 import { formatFCFA } from '@/lib/format';
 import { DIRECT_PAYMENT_METHODS } from '@/lib/direct-payment';
+import { isYearEndPromoActive, isYearEndPromoProduct } from '@/lib/year-end-promo';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,11 +40,16 @@ export default function PanierPage() {
   const [codeInfo, setCodeInfo] = useState<{ valid: boolean; nom?: string; remise_pct?: number; remise_montant?: number; new_total?: number; message?: string } | null>(null);
   const [placed, setPlaced] = useState<{ orderId: string; total: number; waMsg: string } | null>(null);
 
+  // Lecture du localStorage après le montage : l'initialiser dans useState
+  // recréerait l'erreur d'hydratation #418 (rendu serveur = panier vide).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setCart(getCart()); }, []);
 
   const cartTotal = getCartTotal(cart);
   const remise = codeInfo?.valid ? (codeInfo.remise_montant || 0) : 0;
   const totalToPay = Math.max(0, cartTotal - remise);
+  // Articles qui bénéficient du mois offert (promo fin d'année)
+  const promoItems = isYearEndPromoActive() ? cart.filter(i => isYearEndPromoProduct(i.name)) : [];
 
   const handleRemove = (id: string) => {
     setCart(removeFromCart(id));
@@ -97,8 +103,11 @@ export default function PanierPage() {
         `📧 Email : ${customer.email}`,
         customer.phone ? `📱 Téléphone : ${customer.phone}` : null,
       ].filter(Boolean).join('\n');
+      const promoLine = promoItems.length
+        ? `\n\n🎁 Promo fin d'année : 1 mois offert sur ${promoItems.map(i => i.name).join(', ')}`
+        : '';
       const waMsg = encodeURIComponent(
-        `Bonjour MF Premium 👋\nJe viens de passer la commande ${ref}.\n\n${infoClient}\n\n🛒 Article(s) :\n${items}\n\n💰 Montant : ${formatFCFA(data.total)} FCFA\n\nJe paie par Orange/MTN — voici ma preuve de paiement :`
+        `Bonjour MF Premium 👋\nJe viens de passer la commande ${ref}.\n\n${infoClient}\n\n🛒 Article(s) :\n${items}${promoLine}\n\n💰 Montant : ${formatFCFA(data.total)} FCFA\n\nJe paie par Orange/MTN — voici ma preuve de paiement :`
       );
 
       setPlaced({ orderId: data.order_id, total: data.total, waMsg });
@@ -204,6 +213,20 @@ export default function PanierPage() {
                 </div>
               ))}
             </div>
+
+            {promoItems.length > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20,
+                background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(124,58,237,0.08))',
+                border: '1px solid rgba(192,132,252,0.5)', borderRadius: 14, padding: '14px 18px',
+              }}>
+                <span style={{ fontSize: 24 }}>🎁</span>
+                <div style={{ fontSize: 13, color: '#e8e0f7', lineHeight: 1.5 }}>
+                  <strong style={{ color: '#c084fc' }}>Promo fin d&apos;année :</strong> 1 mois offert sur {promoItems.map(i => i.name).join(', ')}.
+                  {' '}Il sera ajouté à ta livraison.
+                </div>
+              </div>
+            )}
 
             <div style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: 16, padding: 'clamp(20px,4vw,28px)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>

@@ -3,6 +3,7 @@ import { Product } from '@/types';
 import { formatFCFA } from '@/lib/format';
 import { getServiceMeta, slugify } from '@/lib/catalog';
 import Link from 'next/link';
+import YearEndPromo from '@/components/YearEndPromo';
 
 async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
@@ -42,6 +43,8 @@ export default async function BoutiquePage() {
         <p style={{ color: '#7c6d94', marginBottom: 40, fontSize: 14 }}>
           Choisis ton service, découvre les offres et commande en 2 minutes.
         </p>
+
+        <YearEndPromo showCta={false} embedded />
 
         {Object.keys(grouped).length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#7c6d94' }}>

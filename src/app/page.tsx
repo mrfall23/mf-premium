@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import YearEndPromo from '@/components/YearEndPromo';
 
 const services = [
   { name: 'Netflix', desc: 'Films & Séries 4K', icon: '🎬', bg: 'linear-gradient(135deg,#e50914,#8b0000)', glow: 'rgba(229,9,20,0.4)', anim: 'animate-float' },
@@ -168,6 +169,9 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* Promo fin d'année (masquée automatiquement après le 31 décembre) */}
+      <YearEndPromo />
 
       {/* Services grid */}
       <section style={{ padding: '0 clamp(16px,5vw,40px) 80px' }}>

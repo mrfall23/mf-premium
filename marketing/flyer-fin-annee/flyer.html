@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Flyer promo fin d'année</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=block" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --violet: #a855f7; --violet-2: #7c3aed; --violet-3: #c084fc;
+    --ink: #050508; --muted: #c4b8d8;
+  }
+  html, body { width: 1080px; height: var(--h); background: var(--ink); }
+  body {
+    font-family: 'Space Grotesk', sans-serif; color: #fff; overflow: hidden; position: relative;
+  }
+  .orbit { font-family: 'Orbitron', sans-serif; }
+
+  /* ---------- fond ---------- */
+  .bg { position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 90% 45% at 50% 0%, #3b1170 0%, transparent 70%),
+      radial-gradient(ellipse 70% 40% at 100% 70%, rgba(124,58,237,.45) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 35% at 0% 95%, rgba(168,85,247,.35) 0%, transparent 70%),
+      linear-gradient(180deg, #12061f 0%, #050508 60%, #0d0418 100%);
+  }
+  .grid { position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(168,85,247,.07) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(168,85,247,.07) 1px, transparent 1px);
+    background-size: 54px 54px;
+    mask-image: linear-gradient(180deg, #000 0%, transparent 85%);
+  }
+  .flare { position: absolute; right: -160px; top: 46%; width: 520px; height: 520px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(192,132,252,.55) 0%, rgba(124,58,237,.15) 40%, transparent 70%); }
+  .spark { position: absolute; color: var(--violet-3); opacity: .85; text-shadow: 0 0 18px rgba(192,132,252,.9); }
+  .gift { position: absolute; filter: drop-shadow(0 10px 22px rgba(168,85,247,.55)); }
+
+  /* ---------- contenu ---------- */
+  .wrap { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column;
+    align-items: center; padding: var(--pad-top) 70px var(--pad-bot); justify-content: space-between; }
+
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .logo { width: 74px; height: 74px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--violet), var(--violet-2)); font-weight: 900; font-size: 28px; letter-spacing: 2px;
+    box-shadow: 0 0 34px rgba(168,85,247,.65); }
+  .brand-name { font-size: 34px; font-weight: 700; letter-spacing: 6px; }
+
+  .tag { margin-top: var(--gap-s); display: inline-block; padding: 12px 30px; border-radius: 999px;
+    border: 2px solid rgba(192,132,252,.7); background: rgba(168,85,247,.18);
+    font-weight: 700; font-size: 24px; letter-spacing: 5px; color: var(--violet-3); text-transform: uppercase; }
+
+  .hero { text-align: center; }
+  .h-big { font-size: var(--h1); font-weight: 900; line-height: .95; letter-spacing: -1px;
+    background: linear-gradient(180deg, #fff 35%, var(--violet-3) 75%, var(--violet) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 6px 30px rgba(168,85,247,.55)); }
+  .h-mid { margin-top: 14px; font-size: var(--h2); font-weight: 900; letter-spacing: 3px; }
+  .h-mid .plus { color: var(--violet); }
+  .h-gift { display: inline-block; margin-top: 18px; padding: 10px 34px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--violet), var(--violet-2)); font-size: var(--h3); font-weight: 900;
+    letter-spacing: 3px; transform: rotate(-2deg); box-shadow: 0 10px 40px rgba(168,85,247,.6); }
+
+  /* cadre incliné, comme le flyer d'origine */
+  .frame { width: 100%; padding: 22px; border: 3px solid rgba(255,255,255,.9); border-radius: 6px;
+    transform: rotate(-2.2deg); background: rgba(10,6,18,.55); box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .tile { border-radius: 14px; padding: var(--tile-pad) 10px; text-align: center; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .tile::after { content: ''; position: absolute; inset: auto 0 0 0; height: 45%;
+    background: linear-gradient(to top, rgba(0,0,0,.55), transparent); }
+  .tile > * { position: relative; z-index: 1; }
+  .t-ico { font-size: var(--ico); line-height: 1; }
+  .t-name { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 21px; letter-spacing: .5px; line-height: 1.15; min-height: 50px;
+    display: flex; align-items: center; }
+  .t-from { font-size: 16px; opacity: .85; }
+  .t-price { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 25px; }
+  .t-price small { font-size: 15px; }
+  .t-free { font-size: 15px; font-weight: 700; background: rgba(255,255,255,.95); color: #3b0a73; padding: 5px 10px; border-radius: 999px; }
+
+  .checks { list-style: none; display: flex; flex-direction: column; gap: var(--gap-check); }
+  .checks li { display: flex; align-items: center; gap: 18px; font-size: var(--check); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
+  .ck { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    border: 3px solid var(--violet-3); color: var(--violet-3); font-size: 22px; font-weight: 900; }
+
+  .pill { padding: 18px 46px; border-radius: 999px; border: 3px dashed rgba(255,255,255,.85);
+    background: rgba(168,85,247,.22); font-size: var(--pill); font-weight: 900; letter-spacing: 1.5px; text-align: center; }
+
+  .contact { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .wa { display: flex; align-items: center; gap: 14px; padding: 12px 28px; border-radius: 10px;
+    background: linear-gradient(135deg, #25d366, #128c7e); font-weight: 700; font-size: 34px; letter-spacing: 1px; }
+  .wa svg { width: 38px; height: 38px; }
+  .site { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 3px; color: var(--violet-3); }
+
+  .pay { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .pay-label { font-size: 20px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); }
+  .pay-row { display: flex; gap: 18px; }
+  .om, .momo { padding: 14px 30px; border-radius: 14px; font-weight: 700; font-size: 28px; box-shadow: 0 8px 26px rgba(0,0,0,.45); transform: rotate(-3deg); }
+  .om { background: #ff7900; color: #fff; }
+  .momo { background: #ffcc00; color: #00264d; transform: rotate(3deg); }
+
+  /* ---------- formats ---------- */
+  body.story { --h: 1920px; --pad-top: 90px; --pad-bot: 90px; --h1: 150px; --h2: 64px; --h3: 52px;
+    --tile-pad: 30px; --ico: 72px; --check: 34px; --gap-check: 22px; --pill: 44px; --gap-s: 26px; }
+  body.post { --h: 1350px; --pad-top: 48px; --pad-bot: 46px; --h1: 92px; --h2: 42px; --h3: 34px;
+    --tile-pad: 14px; --ico: 46px; --check: 25px; --gap-check: 10px; --pill: 34px; --gap-s: 16px; }
+  body.post .logo { width: 58px; height: 58px; font-size: 22px; }
+  body.post .brand-name { font-size: 28px; }
+  body.post .tag { font-size: 20px; padding: 9px 24px; }
+  body.post .t-name { font-size: 18px; min-height: 42px; }
+  body.post .t-price { font-size: 21px; }
+  body.post .t-from, body.post .t-free { font-size: 13px; }
+  body.post .ck { width: 32px; height: 32px; font-size: 18px; }
+  body.post .wa { font-size: 28px; padding: 10px 24px; }
+  body.post .wa svg { width: 30px; height: 30px; }
+  body.post .site { font-size: 22px; }
+  body.post .om, body.post .momo { font-size: 22px; padding: 10px 22px; }
+  body.post .pay-label { font-size: 16px; }
+  body.post .contact { gap: 10px; }
+  body.post .pill { padding: 12px 40px; }
+  body.post .bottom { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 30px; }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grid"></div><div class="flare"></div>
+
+<span class="spark" style="top:7%;left:8%;font-size:46px">✦</span>
+<span class="spark" style="top:13%;right:10%;font-size:34px">✦</span>
+<span class="spark" style="top:34%;left:4%;font-size:26px">✧</span>
+<span class="spark" style="top:58%;right:5%;font-size:40px">✦</span>
+<span class="spark" style="bottom:12%;left:7%;font-size:30px">✧</span>
+<span class="gift" style="top:9%;right:6%;font-size:var(--gift1,96px);transform:rotate(14deg)">🎁</span>
+<span class="gift" style="top:26%;left:3%;font-size:var(--gift2,74px);transform:rotate(-14deg)">🎁</span>
+<span class="gift" style="bottom:18%;right:5%;font-size:var(--gift2,74px);transform:rotate(10deg)">🎄</span>
+
+<div class="wrap">
+  <div style="display:flex;flex-direction:column;align-items:center">
+    <div class="brand"><div class="logo orbit">MF</div><div class="brand-name orbit">PREMIUM</div></div>
+    <div class="tag">🎉 Promo fin d'année</div>
+  </div>
+
+  <div class="hero">
+    <div class="h-big orbit">1 MOIS<br>ACHETÉ</div>
+    <div class="h-mid orbit"><span class="plus">=</span> 1 MOIS</div>
+    <div class="h-gift orbit">OFFERT 🎁</div>
+  </div>
+
+  <div class="frame">
+    <div class="tile" style="background:linear-gradient(160deg,#2a0a0e,#e50914)">
+      <div class="t-ico">🎬</div><div class="t-name">Netflix</div>
+      <div class="t-from">dès</div><div class="t-price">2 500 <small>FCFA</small></div><div class="t-free">+1 mois offert</div>
+    </div>
+    <div class="tile" style="background:linear-gradient(160deg,#04210f,#1db954)">
+      <div class="t-ico">🎵</div><div class="t-name">Spotify</div>
+      <div class="t-from">dès</div><div class="t-price">2 000 <small>FCFA</small></div><div class="t-free">+1 mois offert</div>
+    </div>
+    <div class="tile" style="background:linear-gradient(160deg,#021a26,#00a8e0)">
+      <div class="t-ico">📦</div><div class="t-name">Amazon Prime</div>
+      <div class="t-from">dès</div><div class="t-price">2 000 <small>FCFA</small></div><div class="t-free">+1 mois offert</div>
+    </div>
+    <div class="tile" style="background:linear-gradient(160deg,#26050a,#fc3c44)">
+      <div class="t-ico">🍎</div><div class="t-name">Apple Music</div>
+      <div class="t-from">dès</div><div class="t-price">2 500 <small>FCFA</small></div><div class="t-free">+1 mois offert</div>
+    </div>
+  </div>
+
+  <ul class="checks">
+    <li><span class="ck">✓</span>Comptes Premium vérifiés</li>
+    <li><span class="ck">✓</span>Livraison rapide après paiement</li>
+    <li><span class="ck">✓</span>TV, ordinateur, téléphone…</li>
+    <li><span class="ck">✓</span>Support réactif sur WhatsApp</li>
+  </ul>
+
+  <div class="pill orbit">⏳ JUSQU'AU 31 DÉCEMBRE</div>
+
+  <div class="bottom" style="display:flex;flex-direction:column;align-items:center;gap:var(--gap-s)">
+    <div class="contact">
+      <div class="wa">
+        <svg viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        +237 651 536 287
+      </div>
+      <div class="site">premium-mf.com</div>
+    </div>
+    <div class="pay">
+      <div class="pay-label">Moyens de paiement</div>
+      <div class="pay-row"><span class="om">Orange Money</span><span class="momo">MTN MoMo</span></div>
+    </div>
+  </div>
+</div>
+<script>
+  const f = new URLSearchParams(location.search).get('f') || 'story';
+  document.body.className = f;
+  if (f === 'post') { document.documentElement.style.setProperty('--gift1', '70px'); document.documentElement.style.setProperty('--gift2', '54px'); }
+</script>
+</body>
+</html>
